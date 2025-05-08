@@ -1,7 +1,14 @@
-const { type } = require("express/lib/response");
-const mongoose = require("mongoose");
+import mongoose from"mongoose";
+import { Document, Types } from "mongoose";
 
-const notificationSchema = new mongoose.Schema({
+
+export interface NatificationDocument extends Document{
+    from:Types.ObjectId;
+    to:Types.ObjectId;
+    type:string;
+    read:boolean;
+}
+const notificationSchema = new mongoose.Schema<NatificationDocument>({
     from:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"User",
@@ -25,6 +32,6 @@ const notificationSchema = new mongoose.Schema({
     },
 },{timestamps:true});
 
-const notification = mongoose.model("Notification",notificationSchema);
+const notification = mongoose.model<NatificationDocument>("Notification",notificationSchema);
 
-module.exports = notification;
+export default notification;
