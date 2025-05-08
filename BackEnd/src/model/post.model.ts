@@ -50,4 +50,4 @@ const postSchema = new mongoose.Schema<PostDocument>({
 )
 const PostDatabase = mongoose.model<PostDocument>("Post",postSchema);
 
-module.exports = PostDatabase;
+export default PostDatabase;

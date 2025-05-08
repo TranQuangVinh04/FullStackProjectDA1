@@ -30,6 +30,9 @@ export const protectRoute = async (req:Request,res:Response,next:NextFunction):P
       });
       
     }
+    if (!isCheckingCookie.userId) {
+      throw new Error("Cookie Không Có UserId");
+    }
     req.userId = isCheckingCookie.userId;
 
     next();

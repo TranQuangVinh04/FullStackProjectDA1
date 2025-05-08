@@ -21,12 +21,11 @@ export const createAccount = async (data:CreateAccountParams,res:Response) => {
     const isEmail = await UserModel.exists({ email: data.email });
     const isUsername = await UserModel.exists({ username:data.username });
     if (isEmail) {
-        return res.status(BAD_REQUEST).send({success:false,message:"Email Đã Tồn Tại"});
+        return "Email Đã Tồn Tại"
 
     }
     if (isUsername) {
-        return res.status(BAD_REQUEST).send({success:false,message:"Tên Người Dùng Đã Tồn Tại"});
-
+        return "Tên Người Dùng Đã Tồn Tại";
     }
     //hashPassword
     const hashPassword =await hashValue(data.password);
@@ -44,30 +43,31 @@ export const createAccount = async (data:CreateAccountParams,res:Response) => {
     //save 
         await user.save();
         user.password ="null";
-        return user;
+        return {success:true,data:user};
 }
 export const loginAccount = async (data:LoginAccountParams,res:Response) =>{
     
     // verify email
     const isEmail = await UserModel.exists({ email: data.email });
     if(!isEmail){
-        return res.status(NOT_FOUND).json({success:false,message:"Email Không Tồn Tại"});
+        return "Email Không Tồn Tại";
     }
     const user = await UserModel.findOne({email:data.email});
     if(!user){
-        return res.status(NOT_FOUND).json({success:false,message:"Người Dùng Không Tồn Tại"});
+        return "Người Dùng Không Tồn Tại";
     }
     //compare password 
     const verifyPassword = await compareValue(data.password,user.password);
     if(verifyPassword){
         setTokenCookie(user._id,res);
         user.password = "null";
-        return user;
+        return {success:true,data:user};
     }else{
-        return res.status(BAD_REQUEST).json({success:false,message:"Sai Mật Khẩu Vui Lòng Nhập Lại Mật Khẩu"});
+        return "Sai Mật Khẩu Vui Lòng Nhập Lại Mật Khẩu";
     }
 
 }
 export const logoutAccount = async (res:Response) => {
     res.cookie("jwt","",{maxAge:0});
+    return true;
 }
