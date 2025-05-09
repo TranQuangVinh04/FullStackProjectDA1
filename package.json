@@ -8,31 +8,33 @@
   "main": "./BackEnd/src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node --files ./BackEnd/src/server.ts"
+    "dev": "ts-node-dev --respawn --files ./BackEnd/src/server.ts"
   },
   "devDependencies": {
-    "@types/express": "^5.0.1",
-    "@types/node": "^22.15.3",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.11",
+    "@types/node": "^20.11.24",
     "@types/nodemon": "^1.19.6",
-    "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.3.3"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/cookie-parser": "^1.4.8",
+    "@types/cookie-parser": "^1.4.6",
     "@types/cors": "^2.8.17",
-    "@types/dotenv": "^6.1.1",
-    "@types/jsonwebtoken": "^9.0.9",
-    "@types/mongoose": "^5.11.96",
-    "bcryptjs": "^3.0.2",
-    "cloudinary": "^2.6.0",
-    "cookie-parser": "^1.4.7",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/mongoose": "^5.11.97",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^1.41.0",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.14.1",
-    "zod": "^3.24.3"
+    "mongoose": "^7.6.8",
+    "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "^4.0.0",
+    "ts-node-dev": "^2.0.0",
+    "zod": "^3.22.4"
   }
 }

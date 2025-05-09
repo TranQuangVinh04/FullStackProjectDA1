@@ -16,6 +16,7 @@ import {
 } from "../services/auth.service";
 
 import UserModel from "../model/user.model";
+import setTokenCookie from "../utils/setTokenCookie";
 
 const resgiterSchema = z
     .object({
@@ -50,7 +51,10 @@ export async function loginHandler(req:Request,res:Response,) {
     if(user=="Người Dùng Không Tồn Tại"){
             return res.status(NOT_FOUND).json({success:false,message:"Người Dùng Không Tồn Tại"});
         }
-    if(typeof user == "object"){
+    if(typeof user == "object" && user.success ==true){
+         //set token jwt    
+        setTokenCookie(user.data._id,res)
+        //anwser request
         return res.status(OK).json({
             success:user.success,
             message:"Đăng Nhập Thành Công",
@@ -67,7 +71,7 @@ export async function loginHandler(req:Request,res:Response,) {
 }
 
 
-export async function registerHandler(req:Request,res:Response,) {
+export async function registerHandler(req:Request,res:Response) {
 
     // verify request 
     const request = resgiterSchema.parse({
@@ -75,7 +79,7 @@ export async function registerHandler(req:Request,res:Response,) {
         userAgent:req.headers["user-agent"]
     })
     // create user
-    let user = await createAccount(request,res);
+    let user = await createAccount(request);
     //anwser request
     if(user =="Email Đã Tồn Tại"){
         res.status(BAD_REQUEST).send({success:false,message:"Email Đã Tồn Tại"});
@@ -88,6 +92,9 @@ export async function registerHandler(req:Request,res:Response,) {
     if(typeof user =="object"){
         
         if(user.success ==true){
+            //set token jwt
+            setTokenCookie(user.data._id,res)
+            //anwser request
         res.status(CREATED).json({
             success:true,
             message:"Tạo Tài Khoản Thành Công",

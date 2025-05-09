@@ -16,7 +16,7 @@ export type LoginAccountParams = {
     userAgent? :string,
 }
 
-export const createAccount = async (data:CreateAccountParams,res:Response) => {
+export const createAccount = async (data:CreateAccountParams) => {
     //verify email in database
     const isEmail = await UserModel.exists({ email: data.email });
     const isUsername = await UserModel.exists({ username:data.username });
@@ -37,8 +37,7 @@ export const createAccount = async (data:CreateAccountParams,res:Response) => {
         password:hashPassword
     });
 
-    //set token jwt
-    setTokenCookie(user._id,res)
+   
 
     //save 
         await user.save();
@@ -59,7 +58,7 @@ export const loginAccount = async (data:LoginAccountParams,res:Response) =>{
     //compare password 
     const verifyPassword = await compareValue(data.password,user.password);
     if(verifyPassword){
-        setTokenCookie(user._id,res);
+        
         user.password = "null";
         return {success:true,data:user};
     }else{

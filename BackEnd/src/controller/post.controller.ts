@@ -1,6 +1,7 @@
 import {
     Request,
-    Response
+    Response,
+    text
 } from "express";
 import { 
     BAD_REQUEST, 
@@ -18,21 +19,23 @@ import {
     getFollowers, 
     getFollowings ,
     getFollowingsPost,
-    getAllPostUser
+    getAllPostUser,
+    updatePost
 } from "../services/post.service";
 import mongoose from "mongoose";
 import PostDatabase from "../model/post.model";
 import UserDatabase from "../model/user.model";
-
+interface MyRequestParamsUpdatePost {
+    id?:string;
+}
 interface MyRequestBodyCreatePost {
-    text?: string;
-    image?:any;
+    content:string,
   }
 interface MyRequestParamsDeletePost {
     id?:string;
 }
 interface MyRequestBodyComent{
-    text:string;
+    content:string;
 }
 interface MyRequestParamsComent{
     id?:string;
@@ -42,31 +45,28 @@ interface MyRequestParamsLike extends MyRequestParamsComent{
 }
 
 export const createPostUser = async (req: Request<{},{},MyRequestBodyCreatePost>, res: Response) => {
-    const { text } = req.body;
-    let { image } = req.body;
-    if(!text&&!image) {
-        return res.status(BAD_REQUEST).json({
-            success:false,
-            error:"Bài Post Của Bạn Ít nhất phải có ảnh hoặc chữ để có thể đăng thành công"
-        })
-    }
-    const userId = req.userId;
-    let imageUrl = "";
-    const data = {
-        text: text,
-        image: image,
-        userId: userId,
-        imageUrl: imageUrl
-    }
-    const newPost = await CreatePost(data);
 
-    if(newPost =="Người Dùng Không Tồn Tại!"){
-        return res.status(BAD_REQUEST).json({
-            success:false,
-            error:"Người Dùng Không Tồn Tại!"
-        })
-    }
-    if(newPost.success ==true){
+    const { content } = req.body;
+    
+    const userId = req.userId;
+
+    const files = req.files as Express.Multer.File[];
+
+    let URL = "";
+
+    const media = files ? files.map(file => ({
+        url:(file as any).path,
+        type:file.mimetype.startsWith("image") ? "image" : "video",
+    })) : [];
+    
+    const newPost = await CreatePost({
+        content:content,
+        media:media,
+        userId:userId,
+    })
+
+
+    if(typeof newPost === "object" && newPost.success ==true){
         return res.status(CREATED).json({
             success:true,
             message:"Bài Post Mới Của Bạn Đã Được Tạo",
@@ -81,28 +81,29 @@ export const createPostUser = async (req: Request<{},{},MyRequestBodyCreatePost>
 
 }
 export const deletePostUser = async (req:Request<MyRequestParamsDeletePost,{},{}>, res:Response)=>{
-    const { id } = req.params as MyRequestParamsDeletePost;
+    const { id } = req.params;
     
-    if(!id || id ==undefined) {
+    if(!id) {
         return res.status(BAD_REQUEST).json({
             success:false,
             error:"Xóa Post Không Thành Công",
         })
     }
     const newIdPost = new mongoose.Types.ObjectId(id);
+
     const data = {
         idPost: newIdPost,
         userId:req.userId,
     }
     const resuft = await deletePost(data);
     
-    if(resuft ==="Post Không Tồn Tại") {
+    if(resuft =="Post Không Tồn Tại") {
         return res.status(NOT_FOUND).json({
             success:false,
             error:"Post Không Tồn Tại",
         });
     }
-    if(resuft) {
+    if(typeof resuft == "object" && resuft.success == true) {
         return res.status(OK).json({
             success:true,
             error:"Đã Xóa Post Thành Công",
@@ -114,41 +115,42 @@ export const deletePostUser = async (req:Request<MyRequestParamsDeletePost,{},{}
 export const commentPostUser = async (req:Request<MyRequestParamsComent,{},MyRequestBodyComent>, res:Response)=>{
     const { id } = req.params as MyRequestParamsComent;
     const { userId } = req;
-    const {text} = req.body;
-    if(!id || id==undefined) {
+    const {content} = req.body;
+    if(!id) {
         throw new Error("Lỗi Không Chuyền Id Post Khi Coment");
     }
-    if(!text) {
+    if(!content) {
         return res.status(BAD_REQUEST).json({
             success:false, 
             error:"Vui Lòng Nhập gì Đó Vào!"});
     }
 
     const post = await PostDatabase.findById(id);
+
     if(!post) {
         return res.status(NOT_FOUND).json({
             success:false, 
             error:"Post Không Tồn Tại"});
     }
     const data = {
-        text: text,
+        content: content,
         userId: userId,
         post: post,
     }
     const resuft = await commentPost(data);
 
-    if(resuft) {
+    if(typeof resuft == "object" && resuft.success == true) {
         return res.status(OK).json({
             success:true,
             message:"Đã comment thành công",
-            comment: post,
+            comment: resuft.data,
         });
     }else{
         throw new Error("Comment Không Thành Công");
     }
 }
 export const likePostUser = async (req:Request<MyRequestParamsLike,{},{}>, res:Response)=>{
-    const { id } = req.params as MyRequestParamsLike;
+    const { id } = req.params;
     const userId = req.userId;
     if(!id){
         throw new Error("Lỗi Không Chuyền Id Post Khi like");
@@ -164,6 +166,7 @@ export const likePostUser = async (req:Request<MyRequestParamsLike,{},{}>, res:R
         userId: userId,
     }
     const resuft = await likePost(data);
+
     if(resuft.success){
         return res.status(OK).json({
             success:true,
@@ -298,6 +301,7 @@ export const getFollowingsPostUser = async (req:Request, res:Response)=>{
     });
 }
 export const getAllPostUsers = async (req:Request, res:Response)=>{
+
     const userId = req.userId;
     const user = await UserDatabase.findById(userId);
     if(!user){
@@ -322,4 +326,47 @@ export const getAllPostUsers = async (req:Request, res:Response)=>{
         data:PostUsers.data,
         message:PostUsers.message,
     });
+}
+export const getUpdatePostUser = async (req:Request<MyRequestParamsUpdatePost>, res:Response)=>{
+    const {id} = req.params;
+    const post = await PostDatabase.findById(id);
+    if(!post){
+        return res.status(NOT_FOUND).json({
+            success:false,
+            error:"Post Dùng Không Tồn Tại",
+        });
+    }
+    res.status(OK).json({
+        success:true,
+        data:{
+            content:post.content,
+            media:post.media,
+        },
+        message:"Lấy Post Thành Công",
+    });
+}
+export const updatePostUser = async (req:Request<MyRequestParamsUpdatePost,{},{
+    content:string,
+    
+}>, res:Response)=>{
+    const {id} = req.params;
+    const {content} = req.body;
+    if(!id){
+        throw new Error("Lỗi Không Chuyền Id Post Khi Cập Nhật");
+    }
+    const data = {
+        idPost:new mongoose.Types.ObjectId(id),
+        content:content,
+    }
+    const updatedPost = await updatePost(data);
+    if(updatedPost && updatedPost.success == true){
+        res.status(OK).json({
+            success:true,
+            data:updatedPost.data,
+            message:updatedPost.message,
+
+        })
+    }else{
+        throw new Error("Cập Nhật Post Không Thành Công");
+    }
 }
