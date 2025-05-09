@@ -1,13 +1,15 @@
 import mongoose from"mongoose";
 import { Document, Types } from "mongoose";
 
-
+//interface
 export interface NatificationDocument extends Document{
     from:Types.ObjectId;
     to:Types.ObjectId;
     type:string;
     read:boolean;
+    uniqueIdentifier:string;
 }
+//schema    
 const notificationSchema = new mongoose.Schema<NatificationDocument>({
     from:{
         type:mongoose.Schema.Types.ObjectId,
@@ -22,7 +24,7 @@ const notificationSchema = new mongoose.Schema<NatificationDocument>({
     type:{
         type:String,
         required:true,
-        enum:["folow","like","FollowingCreatePost"],
+        enum:["follow","like","CreatePost","comment"],
 
     },
     
@@ -30,8 +32,13 @@ const notificationSchema = new mongoose.Schema<NatificationDocument>({
         type:Boolean,
         default:false,
     },
+    uniqueIdentifier: {
+        type: String,
+        unique: true
+      }
 },{timestamps:true});
 
+//model
 const notification = mongoose.model<NatificationDocument>("Notification",notificationSchema);
 
 export default notification;

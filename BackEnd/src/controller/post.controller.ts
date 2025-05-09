@@ -1,14 +1,15 @@
 import {
     Request,
     Response,
-    text
 } from "express";
+
 import { 
     BAD_REQUEST, 
     CREATED ,
     OK ,
     NOT_FOUND
 } from "../constants/http";
+
 import { 
     commentPost, 
     CreatePost, 
@@ -22,9 +23,14 @@ import {
     getAllPostUser,
     updatePost
 } from "../services/post.service";
+
 import mongoose from "mongoose";
+
 import PostDatabase from "../model/post.model";
+
 import UserDatabase from "../model/user.model";
+
+//interface
 interface MyRequestParamsUpdatePost {
     id?:string;
 }
@@ -44,6 +50,7 @@ interface MyRequestParamsLike extends MyRequestParamsComent{
 
 }
 
+//controller
 export const createPostUser = async (req: Request<{},{},MyRequestBodyCreatePost>, res: Response) => {
 
     const { content } = req.body;
@@ -117,7 +124,7 @@ export const commentPostUser = async (req:Request<MyRequestParamsComent,{},MyReq
     const { userId } = req;
     const {content} = req.body;
     if(!id) {
-        throw new Error("Lỗi Không Chuyền Id Post Khi Coment");
+        throw new Error("Lỗi Không truyền Id Post Khi Coment");
     }
     if(!content) {
         return res.status(BAD_REQUEST).json({
@@ -153,7 +160,7 @@ export const likePostUser = async (req:Request<MyRequestParamsLike,{},{}>, res:R
     const { id } = req.params;
     const userId = req.userId;
     if(!id){
-        throw new Error("Lỗi Không Chuyền Id Post Khi like");
+        throw new Error("Lỗi Không truyền Id Post Khi like");
     }
     const post = await PostDatabase.findById(id);
     if(!post) {
@@ -352,7 +359,7 @@ export const updatePostUser = async (req:Request<MyRequestParamsUpdatePost,{},{
     const {id} = req.params;
     const {content} = req.body;
     if(!id){
-        throw new Error("Lỗi Không Chuyền Id Post Khi Cập Nhật");
+        throw new Error("Lỗi Không truyền Id Post Khi Cập Nhật");
     }
     const data = {
         idPost:new mongoose.Types.ObjectId(id),

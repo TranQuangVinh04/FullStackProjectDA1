@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
+//middleware validate post
 export const validatePost = (req: Request, res: Response, next: NextFunction) => {
 
         const { content } = req.body;
@@ -41,6 +42,8 @@ export const validatePost = (req: Request, res: Response, next: NextFunction) =>
         next();
 
 };
+
+//middleware validate comment
 export const validateComment = (req: Request, res: Response, next: NextFunction) => {
     const { content } = req.body;
     if (!content) {
@@ -57,3 +60,17 @@ export const validateComment = (req: Request, res: Response, next: NextFunction)
     }
     next();
 };
+
+//middleware validate image
+export const validateImageProfile = (req: Request, res: Response, next: NextFunction) => {
+    const file = req.file;
+    if (!file) {
+        return res.status(400).json({
+            success: false,
+            message: 'Vui lòng upload ảnh'
+        });
+    }
+    next();
+};
+
+

@@ -1,10 +1,14 @@
 import {Request , Response ,  NextFunction } from "express";
+
 import jwt from "jsonwebtoken";
-import {JWT_SECRET}from "../constants/env"
+
+import {JWT_SECRET}from "../constants/env";
+
 import { BAD_REQUEST, UNAUTHORIZED } from "../constants/http";
+
 import mongoose from "mongoose";
 
-// Thêm kiểu cho request có thuộc tính user
+//middleware verify token
 export const protectRoute = async (req:Request,res:Response,next:NextFunction):Promise<any>=> {
 
     const token = req.cookies.jwt;

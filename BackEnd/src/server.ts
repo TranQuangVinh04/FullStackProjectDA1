@@ -10,6 +10,7 @@ import errorHandler from "./middleware/errorHandler"
 import routerAuth from "./router/auth.router"
 import routerPost from './router/post.router';
 import bodyParser from 'body-parser';
+import routerUser from './router/user.router';
 const app = express();
 
 app.use(
@@ -29,6 +30,7 @@ app.use(express.static("public"));
 
 app.use("/api/auth",routerAuth);
 app.use("/api/post",routerPost);
+app.use("/api/user",routerUser);
 
 app.use(errorHandler);
 async function startServer (){

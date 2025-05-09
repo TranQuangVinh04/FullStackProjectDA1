@@ -16,8 +16,10 @@ import {
 } from "../services/auth.service";
 
 import UserModel from "../model/user.model";
+
 import setTokenCookie from "../utils/setTokenCookie";
 
+//zodSchema
 const resgiterSchema = z
     .object({
         username:z.string().min(8).max(50),
@@ -36,6 +38,8 @@ const loginSchema = z
         email:z.string().email().min(1).max(255),
         password:z.string().min(6).max(255),
     })
+    
+//controller
 export async function loginHandler(req:Request,res:Response,) {
     // verify request 
     const request = loginSchema.parse({

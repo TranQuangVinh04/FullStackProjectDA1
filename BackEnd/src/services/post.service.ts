@@ -1,10 +1,20 @@
 import PostModel from "../model/post.model";
+
 import UserModel from "../model/user.model";
+
 import mongoose from "mongoose";
 
 import {PostDocument} from "../model/post.model";
+
 import { UserDocument } from "../model/user.model";
+    
 import {cloudinary} from "../config/cloudinary";
+
+import DatabaseNatification from "../model/notification";
+
+import { createNotification } from "./natification.service";
+
+//type
 export type CreatePostParams = {
     content:string;
     media:object[];
@@ -43,10 +53,7 @@ export type UpdatePostParams = {
     content:string,
 }
 export const CreatePost = async (data:CreatePostParams) => {
-    const user = UserModel.findById(data.userId);
-    if(!user) {
-        return "Người Dùng Không Tồn Tại!";
-    }
+    
 
     const newPost = new PostModel({
         user:data.userId,
@@ -54,9 +61,15 @@ export const CreatePost = async (data:CreatePostParams) => {
         media:data.media,
 
     });
-    //natification
-
-    //
+    const user = await UserModel.findById(data.userId);
+    if(user && user.followers.length > 0){
+        const notifications = user.followers.map((follower:any) => ({
+            from: data.userId,
+            to: follower,
+            type: 'CreatePost',   
+        }));
+        await DatabaseNatification.insertMany(notifications);
+    }
     await newPost.save();
     await newPost.populate("user", "username profileImg");
     return {success:true,data:newPost};
@@ -98,10 +111,18 @@ export const commentPost = async (data:CommentPostParams) => {
     await data.post.comments.push(comment);
 
     await data.post.save();
+    //natification
+    if(data.userId.toString() !== data.post.user.toString()){
+        createNotification({
+            from:data.userId,
+            to:data.post.user,
+            type:"comment",
+        });
+    }
 
     return {success:true,message:"Đã comment thành công",data:data.post};
 }
-//fix
+
 export const likePost = async(data:LikePostParams) => {
     const checkLike = data.post.likes.includes(data.userId);
     
@@ -111,7 +132,14 @@ export const likePost = async(data:LikePostParams) => {
         return {success:true,message:"Đã unlike thành công"};
     }else{
         await PostModel.updateOne({_id:data.post._id}, {$push:{likes:data.userId}})
-        await UserModel.updateOne({_id:data.userId}, {$push:{likedPosts:data.post._id}})    
+        await UserModel.updateOne({_id:data.userId}, {$push:{likedPosts:data.post._id}})
+        if(data.userId.toString() !== data.post.user.toString()){
+            createNotification({
+                from:data.userId,
+                to:data.post.user,
+                type:"like",
+            });
+        }
         return {success:true,message:"Đã like thành công"};
     }
     

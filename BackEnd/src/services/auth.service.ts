@@ -1,8 +1,11 @@
-import setTokenCookie from "../utils/setTokenCookie";
+
 import UserModel from "../model/user.model";
+
 import {compareValue, hashValue} from "../utils/bcrypt";
+
 import {Response} from "express";
-import { BAD_REQUEST, NOT_FOUND } from "../constants/http";
+
+//type
 export type CreateAccountParams = {
     fullname:string;
     username: string;
