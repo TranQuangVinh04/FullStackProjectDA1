@@ -10,7 +10,7 @@ import { UserDocument } from "../model/user.model";
     
 import {cloudinary} from "../config/cloudinary";
 
-import DatabaseNatification from "../model/notification";
+import DatabaseNatification from "../model/notification.model";
 
 import { createNotification } from "./natification.service";
 

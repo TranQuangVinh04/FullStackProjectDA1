@@ -59,7 +59,7 @@ export const createPostUser = async (req: Request<{},{},MyRequestBodyCreatePost>
 
     const files = req.files as Express.Multer.File[];
 
-    let URL = "";
+    // let URL = "";
 
     const media = files ? files.map(file => ({
         url:(file as any).path,

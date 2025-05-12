@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import DatabaseNatification from "../model/notification";
+import DatabaseNatification from "../model/notification.model";
 
 const createUniqueIdentifier = (senderId: string, recipientId: string, type: string) => {
     return `${senderId}_${recipientId}_${type}`;
@@ -37,3 +37,14 @@ const createUniqueIdentifier = (senderId: string, recipientId: string, type: str
   
       return notification;
     }
+  export const readNatification = async (id:mongoose.Types.ObjectId,userId:mongoose.Types.ObjectId)=>{
+    const natificationUpdate = await DatabaseNatification.findByIdAndUpdate({_id:id,to:userId},{
+      read:true
+    },{
+      new:true
+    })
+    if(!natificationUpdate){
+      return {success:false,message:"Không Tìm Thấy Thông Báo"};
+    }
+    return {natificationUpdate,success:true,message:"Đã Đọc Thông Báo"};
+  }
