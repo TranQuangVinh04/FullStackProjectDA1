@@ -1,11 +1,16 @@
+import React from "react";
 import { useState, useEffect } from "react";
+import { useAuthStore } from "../store/authe.store";
+
 type Message = {
   type: string; text: string;
 };
-import { useAuthStore } from "../store/authe.store";
+
+
 const Register = () => {
+    //store
     const {register,isLoading} = useAuthStore()
-    
+    //state
     const [formData,setFormData] = useState({
       username:"",
       fullname:"",
@@ -14,11 +19,13 @@ const Register = () => {
       comfirmPassword:"",
   
     });
+    const [messages, setMessages] = useState<Message[]>([]);
+    //handle Function
     const handleRegister = async (e:React.FormEvent) => {
         e.preventDefault();
         await register(formData);
     }
-    const [messages, setMessages] = useState<Message[]>([]);
+    
     const simulateWelcomeMessage = async () => {
     
         const welcomeText = "Chào Mừng Bạn Đến Với Mạng Xã Hội Thu Nhỏ Nơi Bạn Có Thể Chia Sẻ Những Khoảng Khắc Cùng Bạn Bè!";

@@ -16,7 +16,7 @@ export const useAuthStore = create<AuthState>((set,get) => ({
     //user
     authUser: null,
     //loading
-    isLoading: false,
+    isLoading: true,
     isLogin: false,
     isRegister: false,
     //error
@@ -31,16 +31,18 @@ export const useAuthStore = create<AuthState>((set,get) => ({
             toast.success(response.data.message);
             
 
-            set({authUser: response.data.user})
-            set({isLogin: true})
+            set({authUser: response.data.user,
+                isLogin: true,
+                isLoading: false,
+            })
 
         } catch (error:any) {
             toast.error(error.response.data.message);
             
-            set({authUser: null})
-            set({isLogin: false})
-        }finally{
-            set({isLoading: false})
+            set({authUser: null,
+                isLogin: false,
+                isLoading: false,
+            });
         }
         
         
@@ -50,29 +52,34 @@ export const useAuthStore = create<AuthState>((set,get) => ({
         set({isLoading: true})
         try {
             const response = await axiosInstanace.get("/auth/getMe");
-            set({authUser: response.data.user})
-            set({isLogin: true})
+            console.log(response.data.user);
+            set({authUser: response.data.user,
+                isLogin: true,
+                isLoading: false,
+            })
         } catch (error:any) {
-            set({authUser: null})
-            set({isLogin: false})
-        }finally{
-            set({isLoading: false}) 
+            set({authUser: null,
+                isLogin: false,
+                isLoading: false,
+            });
         }
     },
+    
     register: async (data:object) => {
         set({isLoading: true});
-        set({isRegister: true});
         try {
             const response = await axiosInstanace.post("/auth/register", data);
-            set({authUser: response.data.user})
-            set({isLogin: true})
+            set({authUser: response.data.user,
+                isLogin: true,
+                isLoading: false,
+            })
         } catch (error:any) {
             toast.error(error.response.data.message);
-            set({authUser: null});
-            set({isLogin: false})
-        }finally{
-            set({isLoading: false})
-            set({isRegister: false})
+            set({authUser: null,
+                isLogin: false,
+                isLoading: false,
+            });
+            
         }
         
     },
@@ -80,13 +87,13 @@ export const useAuthStore = create<AuthState>((set,get) => ({
         set({isLoading: true})
         try {
             const response = await axiosInstanace.post("/auth/logout")
-            set({authUser: null})
-            set({isLogin: false})
+            set({authUser: null,
+                isLogin: false,
+                isLoading: false,
+            });
             toast.success(response.data.message)
         } catch (error:any) {
             toast.error(error.response.data.message);
-        }finally{
-            set({isLoading: false})
         }
     }
 }))
