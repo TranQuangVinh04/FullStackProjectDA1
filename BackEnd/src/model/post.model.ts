@@ -1,6 +1,7 @@
 // BackEnd/src/model/post.model.ts
 import mongoose from 'mongoose';
 
+//interface
 export interface PostDocument extends mongoose.Document {
     user: mongoose.Types.ObjectId;
     content: string;
@@ -17,7 +18,7 @@ export interface PostDocument extends mongoose.Document {
     createdAt: Date;
     updatedAt: Date;
 }
-
+//schema    
 const postSchema = new mongoose.Schema<PostDocument>({
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -78,8 +79,10 @@ postSchema.virtual('commentsCount').get(function() {
     return this.comments.length;
 });
 
+//tối ưu hóa tìm kiếm
 postSchema.index({ user: 1, createdAt: -1 });
 postSchema.index({ content: 'text' });
 
+//model
 const Post = mongoose.model<PostDocument>('Post', postSchema);
 export default Post;

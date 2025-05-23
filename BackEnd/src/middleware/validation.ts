@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { BAD_REQUEST } from '../constants/http';
 
 //middleware validate post
 export const validatePost = (req: Request, res: Response, next: NextFunction) => {
@@ -37,6 +38,17 @@ export const validatePost = (req: Request, res: Response, next: NextFunction) =>
                 });
             }
         }
+        // Kiểm tra kích thước file
+    if (files) {
+        for (const file of files) {
+            if (file.size > 5 * 1024 * 1024) {
+                return res.status(BAD_REQUEST).json({
+                    success: false,
+                    error: "Kích thước file không được vượt quá 5MB"
+                });
+            }
+        }
+    }
 
        
         next();

@@ -1,19 +1,30 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/authe.store";
+import { Eye } from "lucide-react";
+import { EyeOff } from "lucide-react";
 type Message = {
     type: string; text: string;
 };
 const Login = () => {
-    const {login ,isLoading} = useAuthStore()
-      
+    //store
+    const {login ,isLoading} = useAuthStore() 
+    //state
     const [formData,setFormData] = useState({
         email:"",
         password:"",
+        rememberMe:false
     
       });
-  
+      const [showPassword, setShowPassword] = useState({
+        current: false,
+        new: false,
+        confirm: false,
+      });
     const [messages, setMessages] = useState<Message[]>([]);
+    const toggleShow = (field) => {
+        setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
+      };
     const simulateWelcomeMessage = async () => {
     
         const welcomeText = "Chào Mừng Bạn Đến Với Mạng Xã Hội Thu Nhỏ Nơi Bạn Có Thể Chia Sẻ Những Khoảng Khắc Cùng Bạn Bè!";
@@ -31,13 +42,13 @@ const Login = () => {
     };
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-       
         await login(formData);
     }
       useEffect(() => {
         simulateWelcomeMessage();
       }, []);
+    
+      
     return (
         <div >
             
@@ -76,19 +87,32 @@ const Login = () => {
                                 />
                                 <br />
                                
-                                <input 
-                                type="password" 
+                                
+                                <div className="relative">
+                                <input
                                 name="password"
                                 placeholder="Password" 
-                                className="w-full border-b-1 border-gray-300 bg-transparent  outline-none focus:outline-none size-10" 
+                                type={showPassword.confirm ? 'text' : 'password'}
                                 value={formData.password}
                                 onChange={(e) => setFormData({...formData, password: e.target.value})}
-                                disabled={isLoading}
+                                className="w-full border-b-1 border-gray-300 bg-transparent  outline-none focus:outline-none size-10"
                                 />
+                                <span
+                                onClick={() => toggleShow('confirm')}
+                                className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 cursor-pointer"
+                                >
+                                {showPassword.confirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </span>
+                            </div>
                             </div>
                             <div className="Login__ForgotPasswordAndRememberPassword flex justify-between">
                                 <div className="RememberPassword flex items-center gap-2">
-                                    <input type="checkbox" className="checkbox checkbox-success" />
+                                    <input 
+                                    type="checkbox" 
+                                    onChange={(e) => setFormData({...formData, rememberMe: e.target.checked})} 
+                                    className="checkbox checkbox-success" 
+                                    checked={formData.rememberMe}
+                                    />
                                     <p>Nhớ Mật Khẩu</p>
                                 </div>
                                 <div className="ForgotPassword">

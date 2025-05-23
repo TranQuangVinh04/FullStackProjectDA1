@@ -1,9 +1,10 @@
 import { 
     BAD_REQUEST, 
-    CREATED ,
-    OK ,
+    CREATED,
+    OK,
     NOT_FOUND
 } from "../constants/http";
+
 
 import { z } from "zod";
 
@@ -13,244 +14,191 @@ import {
 } from "express";
 
 import UserDatabase from "../model/user.model";
-
-import { 
-    setFollowOrUnfollowLogic,
-    changePasswordLogic,
-    updateFullnameUserLogic,
-    uploadImageProfile,
-    uploadCoverImage,
-    updateBio,
-
-} from "../services/user.service";
+import { userService } from "../services/user.service";
+import { cloudinary } from "../config/cloudinary";
 
 //interface
 interface MyRequestParams {
-    id?:string;
+    username?: string;
 }
-interface MyRequestParamsFollow {
-    id?:string;
-}
+
 interface MyRequestBodyChangePassword {
-    currentPassword:string;
-    newPassword:string;
+    currentPassword: string;
+    newPassword: string;
 }
-interface MyRequestBodyUpdateProfile {
-    fullname?:string;
-}
+
 const changePasswordSchema = z.object({
-    currentPassword:z.string().min(6).max(255),
-    newPassword:z.string().min(6).max(255),
+    confirmPassword: z.string().min(6).max(255).optional(),
+    currentPassword: z.string().min(6).max(255),
+    newPassword: z.string().min(6).max(255),
 })
+
 const updateProfileSchema = z.object({
-    fullname:z.string().min(1).max(200).optional(),
-    bio:z.string().min(1).max(200).optional(),
+    fullname: z.string().min(1).max(200).optional(),
+    bio: z.string().min(1).max(200).optional(),
 })
 
 //controller
-export const getProfile = async (req:Request<MyRequestParams>,res:Response)=>{
-    const {id} = req.params;
-    if(!id){
-        throw new Error("Chưa Có Id Người Dùng");
+export const getProfile = async (req: Request<MyRequestParams>, res: Response) => {
+    const { username } = req.params;
+    if (!username) {
+       throw new Error("Chưa Có Username Người Dùng");
     }
-    const user = await UserDatabase.findById(id).select("-password -role -createdAt -updatedAt -__v");
-    if(!user){  
+    const user = await UserDatabase.findOne({username:username}).select("-password -role -createdAt -updatedAt -__v").populate("followers").populate("following");
+    if (!user) {  
         return res.status(NOT_FOUND).json({
-            success:false,
-            message:"Người Dùng Không Tồn Tại"
+            success: false,
+            message: "Người Dùng Không Tồn Tại"
         });
     }
     return res.status(OK).json({
-        success:true,
-        message:"Lấy Người Dùng Thành Công",
-        user:user
+        success: true,
+        message: "Lấy Người Dùng Thành Công",
+        user: user
     });
-    
 }
-export const setFollowOrUnfollow = async (req:Request<MyRequestParamsFollow,{},{}>,res:Response)=>{
-    const {id} = req.params;
-    const userId = req.userId;
-    if(!id){
+
+export const setFollowOrUnfollow = async (req: Request<{id?:string}>, res: Response) => {
+    const { id } = req.params;
+    if (!id) {
         throw new Error("Chưa Có Id Người Dùng");
     }
+    const userCurrent = await UserDatabase.findById(req.userId);
     const userMotify = await UserDatabase.findById(id);
-    if(!userMotify){
+    if (!userCurrent || !userMotify) {
         return res.status(NOT_FOUND).json({
-            success:false,
-            message:"Người Dùng Không Tồn Tại"
+            success: false,
+            message: "Người Dùng Không Tồn Tại"
         });
     }
-    const user = await UserDatabase.findById(userId);
-    if(!user){
-        return res.status(NOT_FOUND).json({
-            success:false,
-            message:"Người Dùng Không Tồn Tại"
-        });
-    }
-    if(userMotify._id.toString() === user._id.toString()){
-        return res.status(BAD_REQUEST).json({
-            success:false,
-            message:"Không Thể Theo Dõi Chính Mình"
-        });
-    }
-    const isFollow = userMotify.followers.includes(user._id);
+    const isFollow = userCurrent.following.includes(userMotify._id);
     const data = {
-        userCurrent:user,
-        userMotify:userMotify,
-        isFollow:isFollow
+        userCurrent,
+        userMotify,
+        isFollow
     }
-    const result = await setFollowOrUnfollowLogic(data);
-    if(result && result.success){
-        return res.status(OK).json({
-            success:true,
-            message:result.message
-        });
-    }else{
-        throw new Error("Lỗi Khi Theo Dõi Người Dùng");
-    }
-    
+    const result = await userService.setFollowOrUnfollow(data);
+    return res.status(OK).json(result);
 }
-export const changePasswordUser = async (req:Request<{},{},MyRequestBodyChangePassword>,res:Response)=>{
+
+export const changePasswordUser = async (req: Request<{}, {}, MyRequestBodyChangePassword>, res: Response) => {
     const request = changePasswordSchema.parse({
         ...req.body,
     })
-    const user = await UserDatabase.findById(req.userId);
-    if(!user){
-        return res.status(NOT_FOUND).json({
-            success:false,
-            message:"Người Dùng Không Tồn Tại"
-        });
-    }
-    const data = {
-        user:user,
-        currentPassword:request.currentPassword,
-        newPassword:request.newPassword
-    }
-   const result = await changePasswordLogic(data);
-
-   if(result && result.success){
-    return res.status(OK).json({
-        success:result.success,
-        message:result.message
-    });
-   }else{
+    if (request.newPassword !== request.confirmPassword) {
+        console.log(request.newPassword, request.confirmPassword)
         return res.status(BAD_REQUEST).json({
-            success:result.success,
-            message:result.message
+            success: false,
+            message: "Mật Khẩu Confirm Không Khớp"
         });
     }
-}
-export const updateFullNameUser = async (req:Request<{},{},MyRequestBodyUpdateProfile>,res:Response)=>{
-    const request = updateProfileSchema.parse({
-        ...req.body,
-    })
-
+   
     const user = await UserDatabase.findById(req.userId);
-
-    if(!user){
+    if (!user) {
         return res.status(NOT_FOUND).json({
-            success:false,
-            message:"Người Dùng Không Tồn Tại"
+            success: false,
+            message: "Người Dùng Không Tồn Tại"
         });
     }
-    let fullname = request.fullname as string;
     const data = {
-        user:user,
-        fullname:fullname,
+        user: user,
+        currentPassword: request.currentPassword,
+        newPassword: request.newPassword
     }
-    const result = await updateFullnameUserLogic(data);
+    const result = await userService.changePassword(data);
 
-    if(result && result.success){
+    if (result && result.success) {
         return res.status(OK).json({
-            success:result.success,
-            message:result.message
+            success: result.success,
+            message: result.message
         });
-    }else{
-        throw new Error("Lỗi Khi Cập Nhật Thông Tin Người Dùng");
+    } else {
+        return res.status(BAD_REQUEST).json({
+            success: result.success,
+            message: result.message
+        });
     }
 }
-export const uploadImageProfileUser = async (req:Request<{},{},{}>,res:Response)=>{
+
+export const uploadImageProfileUser = async (req: Request<{}, {}, {}>, res: Response) => {
     const file = req.file;
     const user = await UserDatabase.findById(req.userId);
-    if(!user){
+    if (!user) {
         return res.status(NOT_FOUND).json({
-            success:false,
-            message:"Người Dùng Không Tồn Tại"
+            success: false,
+            message: "Người Dùng Không Tồn Tại"
         });
     }
     let image = "";
-    if(file && file !== undefined){
-        image = file.path as string;
+    
+    if (user.profileImg) {
+        const cloundId = user.profileImg.split("/").pop()?.split(".")[0];
+        if (cloundId) {
+            await cloudinary.uploader.destroy(`social-media/${cloundId}`);
+        }
     }
+
+    image = file?.path as string;
+    
     const data = {
-        image:image,
-        user:user,
+        image: image,
+        user: user,
     }
-    const result = await uploadImageProfile(data);
-    if(result && result.success){
+    const result = await userService.uploadImageProfile(data);
+    if (result && result.success) {
         return res.status(OK).json({
-            success:result.success,
-            message:result.message
+            success: result.success,
+            message: result.message
         });
-    }else{
+    } else {
         throw new Error("Lỗi Khi Cập Nhật Ảnh Đại Diện Người Dùng");
     }
 }
-export const uploadCoverImageUser = async (req:Request<{},{},{}>,res:Response)=>{
-    const file = req.file;
-    const user = await UserDatabase.findById(req.userId);
-    if(!user){
-        return res.status(NOT_FOUND).json({
-            success:false,
-            message:"Người Dùng Không Tồn Tại"
-        });
-    }
-    let image = "";
-    if(file && file !== undefined){
-        image = file.path as string;
-    }
-    const data = {
-        image:image,
-        user:user,
-    }
-    const result = await uploadCoverImage(data);
 
-    if(result && result.success){
-        return res.status(OK).json({
-            success:result.success, 
-            message:result.message
-        });
-    }else{
-        throw new Error("Lỗi Khi Cập Nhật Ảnh Bìa Người Dùng");
-    }
-}
-export const updateBioUser = async (req:Request<{},{},MyRequestBodyUpdateProfile>,res:Response)=>{
+export const updateProfileUs = async (req: Request<{}, {}, { fullname?: string; bio?: string }>, res: Response) => {
     const request = updateProfileSchema.parse({
         ...req.body,
     })
     const user = await UserDatabase.findById(req.userId);
-    if(!user){
+    if (!user) {
         return res.status(NOT_FOUND).json({
-            success:false,
-            message:"Người Dùng Không Tồn Tại"
+            success: false,
+            message: "Người Dùng Không Tồn Tại"
         });
     }
-    const bio = request.bio as string;
-    const data = {  
-        bio:bio,
-        user:user,
+    const file = req.file;
+    if (file) {
+        const cloundId = user.profileImg.split("/").pop()?.split(".")[0];
+        if (cloundId) {
+            await cloudinary.uploader.destroy(`social-media/${cloundId}`);
+        }
+        const image = file.path as string;
+        const data = {
+            image: image,
+            user: user,
+        }
+        await userService.uploadImageProfile(data);
+        
     }
 
-    const result = await updateBio(data);
-
-    if(result && result.success){
-        return res.status(OK).json({
-            success:result.success,
-            message:result.message
-        });
-    }else{
-        throw new Error("Lỗi Khi Cập Nhật Thông Tin Người Dùng");
-
+    if (request.fullname) {
+        const data = {
+            user: user,
+            fullname: request.fullname
+        }
+        await userService.updateFullname(data);
     }
+
+    if (request.bio) {
+        const data = {
+            user: user,
+            bio: request.bio
+        }
+        await userService.updateBio(data);
+    }
+
+    return res.status(OK).json({
+        success: true,
+        message: "Đã Cập Nhật Thông Tin Người Dùng"
+    });
 }
-    

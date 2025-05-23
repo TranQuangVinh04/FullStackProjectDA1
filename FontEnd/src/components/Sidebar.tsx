@@ -1,4 +1,4 @@
-import { Home, Search, Compass, Video, MessageCircle, Bell , PlusSquare,LogOut } from 'lucide-react';
+import { Home, Search, Compass, Video, MessageCircle, Bell , PlusSquare,LogOut,Lock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import React from 'react';
 import { useAuthStore } from '../store/authe.store';
@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 export default function Sidebar() {
   //store
   const {authUser,logout,isLogin} = useAuthStore();
+  const username = authUser?.username;
   //state
   const [active, setActive] = useState('Trang chủ');
   //schema
@@ -19,10 +20,12 @@ export default function Sidebar() {
     { label: 'Tin nhắn', icon: <MessageCircle /> },
     { label: 'Thông báo', icon: <Bell /> },
     { label: 'Tạo', icon: <PlusSquare /> },
-    { label: 'Trang cá nhân', icon: <img src={authUser?.profileImg ||"./imagebackround.png"} alt="Avatar" className="w-6 h-6 rounded-full" /> ,href: "/Profile"},
+    { label: 'Trang cá nhân', icon: <img src={authUser?.profileImg ||"./imagebackround.png"} alt="Avatar" className="w-6 h-6 rounded-full" /> ,href:`${authUser.username}`},
   ];
   const bottomItems = [
+    { label: 'Đổi Mật Khẩu', icon: <Lock /> ,href: `${authUser._id}/change-password`},
     { label: 'Đăng Xuất', icon: <LogOut /> },
+
 ];
 const handleLogout = () => {
   logout();
@@ -31,8 +34,10 @@ useEffect(() => {
   const path = window.location.pathname;
   if(path === "/"){
     setActive("Trang chủ");
-  }else if(path === "/Profile"){
+  }else if(path === "/Profile" || path === "/profile"){
     setActive("Trang cá nhân");
+  }else{
+    setActive("null");
   }
 }, []);
   return (
@@ -64,14 +69,19 @@ useEffect(() => {
       </div>
       <div className="space-y-3 p-2">
         {bottomItems.map((item) => (
+          <Link 
+            key={item.label}
+            to={item.href || ""}
+          >
           <button
             key={item.label}
-            onClick={() => handleLogout()}
+            onClick={item.label === "Đăng Xuất" ? () => handleLogout() : () => {}}
             className="flex items-center space-x-3 px-2 py-2 rounded-lg hover:bg-white/10 w-full text-left cursor-pointer"
           >
             <span className='max-xl:relative top-[50%] left-[50%] max-xl:translate-x-[-50%]'>{item.icon}</span>
             <span className='xl:block hidden'>{item.label}</span>
           </button>
+          </Link>
         ))}
       </div>
     

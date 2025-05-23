@@ -1,5 +1,4 @@
 import React from 'react';
-// components/ProtectedRoute.tsx
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authe.store';
 import Loading from './Loading';

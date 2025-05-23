@@ -52,7 +52,6 @@ export const useAuthStore = create<AuthState>((set,get) => ({
         set({isLoading: true})
         try {
             const response = await axiosInstanace.get("/auth/getMe");
-            console.log(response.data.user);
             set({authUser: response.data.user,
                 isLogin: true,
                 isLoading: false,

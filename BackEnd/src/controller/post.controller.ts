@@ -5,375 +5,461 @@ import {
 
 import { 
     BAD_REQUEST, 
-    CREATED ,
-    OK ,
+    CREATED,
+    OK,
     NOT_FOUND
 } from "../constants/http";
 
-import { 
-    commentPost, 
-    CreatePost, 
-    deletePost, 
-    likePost ,
-    getAllPost ,
-    getAllLikePost ,
-    getFollowers, 
-    getFollowings ,
-    getFollowingsPost,
-    getAllPostUser,
-    updatePost
-} from "../services/post.service";
+import { postService } from "../services/post.service";
 
 import mongoose from "mongoose";
 
 import PostDatabase from "../model/post.model";
-
 import UserDatabase from "../model/user.model";
 
 //interface
 interface MyRequestParamsUpdatePost {
-    id?:string;
+    id?: string;
 }
-interface MyRequestBodyCreatePost {
-    content:string,
-  }
-interface MyRequestParamsDeletePost {
-    id?:string;
-}
-interface MyRequestBodyComent{
-    content:string;
-}
-interface MyRequestParamsComent{
-    id?:string;
-}
-interface MyRequestParamsLike extends MyRequestParamsComent{
 
+interface MyRequestBodyCreatePost {
+    content: string;
 }
+
+interface MyRequestParamsDeletePost {
+    id?: string;
+}
+
+interface MyRequestBodyComent {
+    content: string;
+}
+
+interface MyRequestParamsComent {
+    id?: string;
+}
+
+interface MyRequestParamsLike extends MyRequestParamsComent {}
 
 //controller
-export const createPostUser = async (req: Request<{},{},MyRequestBodyCreatePost>, res: Response) => {
-
+export const createPostUser = async (req: Request<{}, {}, MyRequestBodyCreatePost>, res: Response) => {
     const { content } = req.body;
-    
     const userId = req.userId;
-
     const files = req.files as Express.Multer.File[];
 
-    // let URL = "";
-
     const media = files ? files.map(file => ({
-        url:(file as any).path,
-        type:file.mimetype.startsWith("image") ? "image" : "video",
+        url: (file as any).path,
+        type: file.mimetype.startsWith("image") ? "image" : "video",
     })) : [];
     
-    const newPost = await CreatePost({
-        content:content,
-        media:media,
-        userId:userId,
-    })
+    const newPost = await postService.createPost({
+        content: content,
+        media: media,
+        userId: userId,
+    });
 
-
-    if(typeof newPost === "object" && newPost.success ==true){
+    if (typeof newPost === "object" && newPost.success == true) {
         return res.status(CREATED).json({
-            success:true,
-            message:"Bài Post Mới Của Bạn Đã Được Tạo",
-            post:newPost.data,
-    
-        })
-    }else{
+            success: true,
+            message: "Bài Post Mới Của Bạn Đã Được Tạo",
+            post: newPost.data,
+        });
+    } else {
         throw new Error("Tạo Bài Viết Mới Không Thành Công");
     }
-    
-
-
 }
-export const deletePostUser = async (req:Request<MyRequestParamsDeletePost,{},{}>, res:Response)=>{
+
+export const deletePostUser = async (req: Request<MyRequestParamsDeletePost, {}, {}>, res: Response) => {
     const { id } = req.params;
     
-    if(!id) {
+    if (!id) {
         return res.status(BAD_REQUEST).json({
-            success:false,
-            error:"Xóa Post Không Thành Công",
-        })
+            success: false,
+            message: "Xóa Post Không Thành Công",
+        });
     }
-    const newIdPost = new mongoose.Types.ObjectId(id);
 
+    const newIdPost = new mongoose.Types.ObjectId(id);
     const data = {
         idPost: newIdPost,
-        userId:req.userId,
-    }
-    const resuft = await deletePost(data);
+        userId: req.userId,
+    };
+
+    const result = await postService.deletePost(data);
     
-    if(resuft =="Post Không Tồn Tại") {
+    if (result == "Post Không Tồn Tại") {
         return res.status(NOT_FOUND).json({
-            success:false,
-            error:"Post Không Tồn Tại",
+            success: false,
+            message: "Post Không Tồn Tại",
         });
     }
-    if(typeof resuft == "object" && resuft.success == true) {
+
+    if (typeof result == "object" && result.success == true) {
         return res.status(OK).json({
-            success:true,
-            error:"Đã Xóa Post Thành Công",
+            success: true,
+            message: "Đã Xóa Post Thành Công",
         });
-    }else{
-        throw new Error("Xóa Post Không Thành Công");
+    } else {
+        throw new Error("Lỗi Trong Qúa Trình Xóa Post");
     }
 }
-export const commentPostUser = async (req:Request<MyRequestParamsComent,{},MyRequestBodyComent>, res:Response)=>{
+
+export const commentPostUser = async (req: Request<MyRequestParamsComent, {}, MyRequestBodyComent>, res: Response) => {
     const { id } = req.params as MyRequestParamsComent;
     const { userId } = req;
-    const {content} = req.body;
-    if(!id) {
+    const { content } = req.body;
+
+    if (!id) {
         throw new Error("Lỗi Không truyền Id Post Khi Coment");
     }
-    if(!content) {
+
+    if (!content) {
         return res.status(BAD_REQUEST).json({
-            success:false, 
-            error:"Vui Lòng Nhập gì Đó Vào!"});
+            success: false, 
+            message: "Vui Lòng Nhập gì Đó Vào!"
+        });
     }
 
     const post = await PostDatabase.findById(id);
 
-    if(!post) {
+    if (!post) {
         return res.status(NOT_FOUND).json({
-            success:false, 
-            error:"Post Không Tồn Tại"});
+            success: false, 
+            message: "Post Không Tồn Tại"
+        });
     }
+
     const data = {
         content: content,
         userId: userId,
         post: post,
-    }
-    const resuft = await commentPost(data);
+    };
 
-    if(typeof resuft == "object" && resuft.success == true) {
+    const result = await postService.commentPost(data);
+
+    if (typeof result == "object" && result.success == true) {
         return res.status(OK).json({
-            success:true,
-            message:"Đã comment thành công",
-            comment: resuft.data,
+            success: true,
+            message: "Đã comment thành công",
+            comment: result.data,
         });
-    }else{
+    } else {
         throw new Error("Comment Không Thành Công");
     }
 }
-export const likePostUser = async (req:Request<MyRequestParamsLike,{},{}>, res:Response)=>{
+
+export const likePostUser = async (req: Request<MyRequestParamsLike, {}, {}>, res: Response) => {
     const { id } = req.params;
     const userId = req.userId;
-    if(!id){
+
+    if (!id) {
         throw new Error("Lỗi Không truyền Id Post Khi like");
     }
+
     const post = await PostDatabase.findById(id);
-    if(!post) {
+    if (!post) {
         return res.status(NOT_FOUND).json({
-            success:false, 
-            error:"Post Không Tồn Tại"});
+            success: false, 
+            message: "Post Không Tồn Tại"
+        });
     }
+
     const data = {
         post: post,
         userId: userId,
-    }
-    const resuft = await likePost(data);
+    };
 
-    if(resuft.success){
+    const result = await postService.likePost(data);
+
+    if (result && result.success == true) {
         return res.status(OK).json({
-            success:true,
-            message:resuft.message,
+            success: true,
+            message: result.message,
         });
-    }else if(resuft.success == false){
-       return res.status(OK).json({
-        success:true,
-        message:resuft.message,
-       });
-    }else{
+    } else if (result && result.success == false) {
+        return res.status(OK).json({
+            success: true,
+            message: result.message,
+        });
+    } else {
         throw new Error("Like Không Thành Công");
     }
 }
-export const getAllPosts = async (req:Request, res:Response)=>{
 
-    const post = await getAllPost();
+export const getAllPosts = async (req: Request, res: Response) => {
+    const posts = await postService.getAllPost();
 
-    if(post.length == 0){
+    if (posts.length == 0) {
         return res.status(OK).json({
-            success:true,
-            data:[],
+            success: true,
+            data: [],
+        });
+    }
+
+    return res.status(OK).json({
+        success: true,
+        data: posts,
+    });
+}
+//cái controller này lỗi nè
+export const getAllLikePostUser = async (req: Request<{id?:string},{},{}>, res: Response) => {
+    const {id} = req.params;
+    const idMongo = new mongoose.Types.ObjectId(id);
+
+
+    const data = {
+        idPost: idMongo,
+    };
+
+    const likePosts = await postService.getAllLikePost(data);
+
+    if(likePosts.success == false){
+        return res.status(OK).json({
+            success: false,
+            data: [],
+            message: likePosts.message,
         });
     }
     return res.status(OK).json({
-        success:true,
-        data:post,
+        success: likePosts.success,
+        data: likePosts.data,
+        message: likePosts.message,
     });
+   
+}
+
+export const getFollowersUser = async (req: Request, res: Response) => {
+    const userId = req.userId;
+    const user = await UserDatabase.findById(userId);
+
+    if (!user) {
+        return res.status(NOT_FOUND).json({
+            success: false,
+            message: "Người Dùng Không Tồn Tại",
+        });
+    }
+
+    const data = {
+        user: user,
+    };
+
+    const getFollower = await postService.getFollowers(data);
+
+    if (getFollower.success == false) {
+        return res.status(OK).json({
+            success: true,
+            data: [],
+            message: getFollower.message,
+        });
+    }
+
+    return res.status(OK).json({
+        success: true,
+        data: getFollower.data,
+        message: getFollower.message,
+    });
+}
+
+export const getFollwingsUser = async (req: Request, res: Response) => {
+    const userId = req.userId;
+    const user = await UserDatabase.findById(userId);
+
+    if (!user) {
+        return res.status(NOT_FOUND).json({
+            success: false,
+            message: "Người Dùng Không Tồn Tại",
+        });
+    }
+
+    const data = {
+        user: user,
+    };
+
+    const getFollowing = await postService.getFollowings(data);
+
+    if (getFollowing.success == false) {
+        return res.status(OK).json({
+            success: true,
+            data: [],
+            message: getFollowing.message,
+        });
+    }
+
+    return res.status(OK).json({
+        success: true,
+        data: getFollowing.data,
+        message: getFollowing.message,
+    });
+}
+
+export const getFollowingsPostUser = async (req: Request, res: Response) => {
+    const userId = req.userId;
+    const user = await UserDatabase.findById(userId);
+
+    if (!user) {
+        return res.status(NOT_FOUND).json({
+            success: false,
+            message: "Người Dùng Không Tồn Tại",
+        });
+    }
+
+    const data = {
+        user: user,
+    };
+
+    const getFollowingPost = await postService.getFollowingsPost(data);
+
+    if (getFollowingPost.success == false) {
+        return res.status(OK).json({
+            success: true,
+            data: [],
+            message: getFollowingPost.message,
+        });
+    }
+
+    return res.status(OK).json({
+        success: true,
+        data: getFollowingPost.data,
+        message: getFollowingPost.message,
+    });
+}
+
+export const getAllPostUsers = async (req: Request<{username?:string},{},{}>, res: Response) => {
+    const userId = req.userId;
+    const {username} = req.params;
+    const user = await UserDatabase.findById(userId);
+    if (!user) {
+        return res.status(NOT_FOUND).json({
+            success: false,
+            error: "Người Dùng Không Tồn Tại",
+        });
+    }
+    if(username == user?.username){
+        const data = {
+            user: user,
+        };
+        const getAllPost = await postService.getAllPostUser(data);
+        if (getAllPost.success == false) {
+            return res.status(OK).json({
+                success: true,
+                data: [],
+                message: getAllPost.message,
+            });
+        }
+        return res.status(OK).json({
+            success: true,
+            data: getAllPost.data,
+            message: getAllPost.message,
+        });
+    }
+    const userName = await UserDatabase.findOne({username:username});
+    if(!userName){
+        return res.status(NOT_FOUND).json({
+            success: false,
+            error: "Người Dùng Không Tồn Tại",
+        });
+    }
+    const data = {
+        user: userName,
+    };
+    const getAllPost = await postService.getAllPostUser(data);
+    if (getAllPost.success == false) {
+        return res.status(OK).json({
+            success: true,
+            data: [],
+            message: getAllPost.message,
+        });
+    }
+  
+    return res.status(OK).json({
+        success: true,
+        data: getAllPost.data,
+        message: getAllPost.message,
+    });
+
     
 }
-export const getAllLikePostUser = async (req:Request, res:Response)=>{
-    const userId = req.userId;
-    const user = await UserDatabase.findById(userId);
-    if(!user){
-        return res.status(NOT_FOUND).json({
-            success:false,
-            error:"Người Dùng Không Tồn Tại",
-        });
-    }
-    const data = {
-        user:user,
-    }
-    const likePosts = await getAllLikePost(data);
-    if(likePosts.length == 0){
-        return res.status(OK).json({
-            success:true,
-            data:[],
-        });
-    }
-    return res.status(OK).json({
-        success:true,
-        data:likePosts,
-    });
-}
-export const getFollowersUser = async (req:Request, res:Response)=>{
-    const userId = req.userId;
-    const user = await UserDatabase.findById(userId);
-    if(!user){
-        return res.status(NOT_FOUND).json({
-            success:false,
-            error:"Người Dùng Không Tồn Tại",
-        });
-    }
-    const data = {
-        user:user,
-    }
-    const getFollower = await getFollowers(data);
 
-    if(getFollower.success == false){
-        return res.status(OK).json({
-            success:true,
-            data:[],
-            message:getFollower.message,
-        });
-    }
-    return res.status(OK).json({
-        success:true,
-        data:getFollower.data,
-        message:getFollower.message,
-    });
-}
-export const getFollwingsUser = async (req:Request, res:Response)=>{
-    const userId = req.userId;
-    const user = await UserDatabase.findById(userId);
-    if(!user){
-        return res.status(NOT_FOUND).json({
-            success:false,
-            error:"Người Dùng Không Tồn Tại",
-        });
-    }
-    const data = {
-        user:user,
-    }
-    const Followings = await getFollowings(data);
-    if(Followings.success == false){
-        return res.status(OK).json({
-            success:true,
-            data:[],
-            message:Followings.message,
-        });
-    }
-    return res.status(OK).json({
-        success:true,
-        data:Followings.data,
-        message:Followings.message,
-    });
-}
-export const getFollowingsPostUser = async (req:Request, res:Response)=>{
-    const userId = req.userId;
-    const user = await UserDatabase.findById(userId);
-    if(!user){
-        return res.status(NOT_FOUND).json({
-            success:false,
-            error:"Người Dùng Không Tồn Tại",
-        });
-    }
-    const data = {
-        user:user,
-    }
-    const FollowingsPost = await getFollowingsPost(data);
-    if(FollowingsPost.success == false){
-        return res.status(OK).json({
-            success:true,
-            data:[],
-            message:FollowingsPost.message,
-        });
-    }
-    return res.status(OK).json({
-        success:true,
-        data:FollowingsPost.data,
-        message:FollowingsPost.message,
-    });
-}
-export const getAllPostUsers = async (req:Request, res:Response)=>{
+export const updatePostUser = async (req: Request<MyRequestParamsUpdatePost, {}, {
+    content: string,
+}>, res: Response) => {
+    const { id } = req.params;
+    const { content } = req.body;
 
-    const userId = req.userId;
-    const user = await UserDatabase.findById(userId);
-    if(!user){
-        return res.status(NOT_FOUND).json({
-            success:false,
-            error:"Người Dùng Không Tồn Tại",
+    if (!id) {
+        return res.status(BAD_REQUEST).json({
+            success: false,
+            error: "Không Tìm Thấy Id Post",
         });
     }
+
+    const newIdPost = new mongoose.Types.ObjectId(id);
     const data = {
-        user:user,
-    }
-    const PostUsers = await getAllPostUser(data);
-    if(PostUsers.success == false){
+        idPost: newIdPost,
+        content: content,
+    };
+
+    const result = await postService.updatePost(data);
+
+    if (result && result.success == true) {
         return res.status(OK).json({
-            success:true,
-            data:[],
-            message:PostUsers.message,
+            success: true,
+            data: result.data,
+            message: result.message,
         });
+    } else {
+        throw new Error("Cập Nhật Post Không Thành Công");
     }
-    return res.status(OK).json({
-        success:true,
-        data:PostUsers.data,
-        message:PostUsers.message,
-    });
 }
-export const getUpdatePostUser = async (req:Request<MyRequestParamsUpdatePost>, res:Response)=>{
+export const repostPost = async (req: Request<{id?:string},{},{text?:string,problem:string}>, res: Response) => {
     const {id} = req.params;
+    const {text , problem} = req.body;
+    console.log(text,problem,id);
+    if(!id){
+        return res.status(BAD_REQUEST).json({
+            success: false,
+            message: "Vui Lòng Gửi Id Bài Post",
+        });
+    }
+    if(!text || !problem){
+        return res.status(BAD_REQUEST).json({
+            success: false,
+            message: "vui lòng gửi vấn đề khi repost về bài post",
+        });
+    }
     const post = await PostDatabase.findById(id);
     if(!post){
         return res.status(NOT_FOUND).json({
-            success:false,
-            error:"Post Dùng Không Tồn Tại",
+            success: false,
+            message: "Không Tìm Thấy Post hoặc Bài Post Đã Bị Xóa",
         });
     }
-    res.status(OK).json({
-        success:true,
-        data:{
-            content:post.content,
-            media:post.media,
-        },
-        message:"Lấy Post Thành Công",
-    });
-}
-export const updatePostUser = async (req:Request<MyRequestParamsUpdatePost,{},{
-    content:string,
-    
-}>, res:Response)=>{
-    const {id} = req.params;
-    const {content} = req.body;
-    if(!id){
-        throw new Error("Lỗi Không truyền Id Post Khi Cập Nhật");
+    const userBeRepost = await UserDatabase.findById(post.user);
+    if(!userBeRepost){
+        return res.status(NOT_FOUND).json({
+            success: false,
+            message: "Người Dùng Không Tồn Tại",
+        });
     }
     const data = {
-        idPost:new mongoose.Types.ObjectId(id),
-        content:content,
+        userBeRepost: userBeRepost,
+        post: post,
+        text: text,
+        problem: problem,
+    };
+    const result = await postService.repostPost(data);
+    if(result && result.success == true){
+        return res.status(OK).json({
+            success: result.success,
+            message: result.message,
+        });
     }
-    const updatedPost = await updatePost(data);
-    if(updatedPost && updatedPost.success == true){
-        res.status(OK).json({
-            success:true,
-            data:updatedPost.data,
-            message:updatedPost.message,
-
-        })
-    }else{
-        throw new Error("Cập Nhật Post Không Thành Công");
+    if(result && result.success == false){
+        return res.status(BAD_REQUEST).json({
+            success: result.success,
+            message: result.message,
+        });
     }
+    
+    
+    
 }

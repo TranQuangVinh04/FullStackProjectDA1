@@ -1,26 +1,44 @@
-import { User, Bookmark, Trophy , Camera } from 'lucide-react';
+import { User, Video, Trophy , Camera, MessageCircle, UserRoundPlus, UserRoundMinus } from 'lucide-react';
 import React, { useEffect, useState } from "react";
 import { useAuthStore } from "../store/authe.store";
 import { useUserStore } from "../store/user.store";
 import CreatePost from './CreatePost';
-import FollowersModal from './Dialog';
-
+import { ModelDilogLikeFollow } from './DialogUserFollow';
+import { Link, useParams } from 'react-router-dom';
+import Loading from './Loading';
 function Profile() {
   //store
   const { authUser ,isLoading ,autherChecking} = useAuthStore();
-  const { updateProfile } = useUserStore();
-
-  //state
-  const { username, fullname, profileImg, followers = [], following = [] } = authUser;
-  const [activeTab, setActiveTab] = useState("posts");
-  const [selectedImg, setSelectedImg] = useState(profileImg);
+  const { updateProfileImg ,getProfileUser ,profileUser ,setFollowUser} = useUserStore();
   const { getPostsUser, postsUser } = useUserStore();
+  //state
+  const {username} = useParams() as {username: string};
+  const { username:Name, fullname, profileImg, followers = [], following = [] } = authUser;
+  const [activeTab, setActiveTab] = useState("posts");
   const [showModalFollowers, setShowModalFollowers] = useState(false);
   const [showModalFollowing, setShowModalFollowing] = useState(false);
-
+  
+   let activeFollow = "follow"
+  authUser.following.map((item)=>{
+      username == item.username ? activeFollow = "unfollow" : activeFollow = "follow"
+  })  
   useEffect(() => {
-    getPostsUser();
-}, []);
+    const fetchData = async () => {
+      const targetUsername = Name === username ? Name : username;
+      await getPostsUser(targetUsername);
+      await getProfileUser(targetUsername);
+    };
+    
+    fetchData();
+  }, [username]);
+  //Loading
+  if(!profileUser){
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loading />
+      </div>
+    )
+  }
 
 //Xử Lý Upload ảnh
 const handleImageUpload = async (e) => {
@@ -31,32 +49,46 @@ const handleImageUpload = async (e) => {
   reader.onload = async () => {
     const newImage = new FormData();
     newImage.append("image", file);
-    const resuft = await updateProfile(newImage);
+    const resuft = await updateProfileImg(newImage);
     if(resuft){
       await autherChecking();
     }
   };
 };
+//Xử Lý Theo Dõi
+const handleFollow = async () => {
+  const resuft = await setFollowUser(profileUser._id);
+  if(resuft){
+    await getProfileUser(username);
+    await autherChecking();
+  }
+}
   //mode
   const isDarkMode = true;
+  
   return (
     <div className={`min-h-screen ${isDarkMode ? "bg-black text-white" : "bg-white text-black"} min-xl:mx-60  `}>
       {/* Header */}
       <div className="flex flex-col items-center gap-4 relative pt-10 pb-3">
+        {authUser.username == username ?<Link to={`${authUser._id}/edit`}>
         <div className="absolute top-10 right-0 max-xl:w-40 px-3 py-3 ">
             <button className='btn btn-soft bg-[#333] text-white px-4 py-2 rounded-md cursor-pointer max-xl:text-[15px]'>Chỉnh sửa trang cá nhân</button>
             {/* <button className='btn btn-soft bg-[#333] text-white px-4 py-2 rounded-md cursor-pointer'>Kho lưu trữ</button> */}
         </div>
+       </Link>:"" }
 
         <div className="flex items-center gap-40">
              {/* Avatar */}
-          <div className="rounded-full border-4 border-purple-500 p-1 relative">
+             
+          <div className="rounded-full border-4 border-purple-500 p-1 relative cursor-pointer">
+            
             <img
-              src={ selectedImg|| "./imagebackround.png"}
+              src={ profileUser?.profileImg || "./imagebackround.png"}
               alt="avatar"
               className="w-32 h-32 object-cover rounded-full"
             />
-          <label
+           
+          {profileUser?.username === authUser.username && <label
               htmlFor="avatar-upload"
               className={`
                 absolute bottom-0 right-0 
@@ -64,7 +96,10 @@ const handleImageUpload = async (e) => {
                 p-2 rounded-full cursor-pointer 
                 transition-all duration-200  
               `}
+              
           >
+
+            
             <Camera className="w-4 h-4 text-black" />
             <input
               type="file"
@@ -74,14 +109,14 @@ const handleImageUpload = async (e) => {
               onChange={handleImageUpload}
               disabled={isLoading}
             />
-          </label>
+          </label>}
         </div>
-
+        
         {/* Tên và username */}
         <div className="flex flex-col gap-4">
           <div className="text-center">
-            <h1 className="text-2xl font-bold">{fullname}</h1>
-            <p className="text-sm text-gray-400">@{username}</p>
+            <h1 className="text-2xl font-bold">{profileUser?.fullname||""}</h1>
+            <p className="text-sm text-gray-400">@{profileUser?.username||""}</p>
           </div>
           <div className="flex gap-10 mt-4 select-none">
             <div className="text-center">
@@ -89,34 +124,47 @@ const handleImageUpload = async (e) => {
               <p className="text-xs text-gray-400">Bài viết</p>
             </div>
             <button className="text-center cursor-pointer" onClick={() => setShowModalFollowers(true)}>
-              <p className="font-bold text-lg">{followers.length}</p>
+              <p className="font-bold text-lg">{profileUser?.followers.length||0}</p>
               <p className="text-xs text-gray-400">Người theo dõi</p>
             </button>
             <button className="text-center cursor-pointer" onClick={() => setShowModalFollowing(true)}>
-              <p className="font-bold text-lg">{following.length}</p>
+              <p className="font-bold text-lg">{profileUser?.following.length||0}</p>
               <p className="text-xs text-gray-400">Đang theo dõi</p>
             </button>
+            
           </div>
+          
         </div>
+        {username !== Name && <div className='flex gap-5 '>
+            
+            <button className="btn btn-accente border-[#e5e5e5] rounded-full" onClick={handleFollow}>
+              {activeFollow =="unfollow" ? <><UserRoundMinus /> {"Hủy Theo Dõi"}</> : <><UserRoundPlus /> {"Theo Dõi"}</>}
+              
+            </button>
+            <button className="btn btn-accent border-[#e5e5e5] rounded-full">
+            <MessageCircle />Nhắn tin
+            </button>
+            </div>
+     }
       </div>
-      <div className='text-center text-gray-400 mt-15 '>{authUser.link}</div>
+      <div className='text-center text-gray-400 mt-15 '>{profileUser?.link||""}</div>
     </div>
             {showModalFollowers && (
-        <FollowersModal
+        <ModelDilogLikeFollow
           isOpen={showModalFollowers}
           onClose={() => setShowModalFollowers(false)}
-          users={authUser.followers}
+          users={profileUser?.followers}
           title="Người Theo Dõi"
         />
         
         
       )}
       {showModalFollowing && (
-        <FollowersModal
+        <ModelDilogLikeFollow
           isOpen={showModalFollowing}
           onClose={() => setShowModalFollowing(false)}
-          users={authUser.following}
-          title="Đang theo dõi"
+          users={profileUser?.following}
+          title="Người Đang Theo Dõi"
         />
         
         
@@ -131,8 +179,8 @@ const handleImageUpload = async (e) => {
           onClick={() => setActiveTab("posts")}
         />
         <Tab
-          icon={Bookmark}
-          label="Đã lưu"
+          icon={Video}
+          label="Khoảng Khắc"
           isActive={activeTab === "saved"}
           onClick={() => setActiveTab("saved")}
         />
@@ -158,13 +206,14 @@ const handleImageUpload = async (e) => {
           <CreatePost
 
             id={post._id}
-            avatar={profileImg}
-            name={fullname}
+            avatar={profileUser?.profileImg||""}
+            username={profileUser?.username||""}
+            name={profileUser?.fullname||""}
             time={new Date(post.createdAt).toLocaleString()}
             caption={post.content}
             image={post.media.length > 0 ? post.media: null}
             likes={post.likes.length}
-            liked={post.likes.includes(authUser._id)}
+            liked={post.likes.includes(authUser?._id)}
 
           />
         ))
@@ -190,7 +239,7 @@ function Tab({ icon: Icon, label, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 text-sm px-4 py-2 rounded-md 
+      className={`flex items-center gap-2 text-sm px-4 py-2 rounded-md cursor-pointer select-none
         ${isActive ? "bg-gray-700 text-white" : "text-gray-300 hover:text-white"} transition`}
     >
       <Icon className="w-4 h-4" />

@@ -7,6 +7,7 @@ interface PostActionsProps {
   initialShares?: number;
   id: string;
   likedUser: boolean;
+  username: string;
 }
 
 const PostActions: React.FC<PostActionsProps> = ({
@@ -15,7 +16,9 @@ const PostActions: React.FC<PostActionsProps> = ({
   initialComments = 0,
   initialShares = 0,
   likedUser = false,
+  username,
 }) => {
+  const [showModalComment, setShowModalComment] = useState(false);
   const {likepost,getPostsUser} = useUserStore();
   const [likes, setLikes] = useState(initialLikes);
   const [comments, setComments] = useState(initialComments);
@@ -32,23 +35,21 @@ const PostActions: React.FC<PostActionsProps> = ({
       setLikes(likes - 1);
       setLiked(resuft);
     }
-    await getPostsUser();
+    await getPostsUser(username);
   };
 
   const handleComment = () => {
-    // Bạn có thể mở modal comment hoặc chuyển trang comment
-    alert("Chức năng bình luận đang phát triển!");
+    
   };
 
   const handleShare = () => {
     setShares(shares + 1);
     alert("Cảm ơn bạn đã chia sẻ!");
   };
-
   return (
     <div className="border-t border-gray-700 mt-3 pt-2 flex justify-around text-sm text-gray-300">
       <button
-        className={`flex items-center gap-1 ${
+        className={`flex items-center gap-1 cursor-pointer ${
           liked ? "text-blue-500" : "hover:text-white"
         }`}
         onClick={handleLike}
@@ -57,19 +58,21 @@ const PostActions: React.FC<PostActionsProps> = ({
         Thích {likes > 0 ? `` : ""}
       </button>
       <button
-        className="flex items-center gap-1 hover:text-white"
-        onClick={handleComment}
+        className="flex items-center gap-1 hover:text-white cursor-pointer"
+        onClick={() => setShowModalComment(true)}
       >
         <MessageCircle size={16} />
         Bình luận {comments > 0 ? `(${comments})` : ""}
       </button>
+      
       <button
-        className="flex items-center gap-1 hover:text-white"
+        className="flex items-center gap-1 hover:text-white cursor-pointer"
         onClick={handleShare}
       >
         <Share2 size={16} />
         Chia sẻ {shares > 0 ? `(${shares})` : ""}
       </button>
+      
     </div>
   );
 };

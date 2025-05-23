@@ -9,15 +9,7 @@ import {
     BAD_REQUEST
 } from "../constants/http";
 
-import { 
-    createAccount , 
-    loginAccount ,
-    logoutAccount
-} from "../services/auth.service";
-
-import UserModel from "../model/user.model";
-
-import setTokenCookie from "../utils/setTokenCookie";
+import { authService } from "../services/auth.service";
 
 //zodSchema
 const resgiterSchema = z
@@ -37,6 +29,7 @@ const loginSchema = z
     .object({
         email:z.string().email().min(1).max(255),
         password:z.string().min(6).max(255),
+        rememberMe: z.boolean().optional().default(false)   
     })
     
 //controller
@@ -47,7 +40,7 @@ export async function loginHandler(req:Request,res:Response,) {
         userAgent:req.headers["user-agent"]
     })
     //login 
-    const user = await loginAccount(request,res);
+    const user = await authService.loginAccount(request,res);
     //anwser request
     if(user =="Email Không Tồn Tại"){
             return res.status(NOT_FOUND).json({success:false,message:"Email Không Tồn Tại"});
@@ -56,8 +49,8 @@ export async function loginHandler(req:Request,res:Response,) {
             return res.status(NOT_FOUND).json({success:false,message:"Người Dùng Không Tồn Tại"});
         }
     if(typeof user == "object" && user.success ==true){
-         //set token jwt    
-        setTokenCookie(user.data._id,res)
+         //set token jwt với remember me    
+        authService.setTokenCookie(user.data._id, res, request.rememberMe)  
         //anwser request
         return res.status(OK).json({
             success:user.success,
@@ -76,14 +69,14 @@ export async function loginHandler(req:Request,res:Response,) {
 
 
 export async function registerHandler(req:Request,res:Response) {
-
     // verify request 
     const request = resgiterSchema.parse({
         ...req.body,
         userAgent:req.headers["user-agent"]
     })
+   
     // create user
-    let user = await createAccount(request);
+    let user = await authService.createAccount(request);
     //anwser request
     if(user =="Email Đã Tồn Tại"){
         res.status(BAD_REQUEST).send({success:false,message:"Email Đã Tồn Tại"});
@@ -97,7 +90,7 @@ export async function registerHandler(req:Request,res:Response) {
         
         if(user.success ==true){
             //set token jwt
-            setTokenCookie(user.data._id,res)
+            authService.setTokenCookie(user.data._id,res)
             //anwser request
         res.status(CREATED).json({
             success:true,
@@ -113,7 +106,7 @@ export async function registerHandler(req:Request,res:Response) {
 }
 export async function logoutHandler(req:Request,res:Response,) {
     //logout
-    let resuft = await logoutAccount(res);
+    let resuft = await authService.logoutAccount(res);
     //anwser request
     if(resuft ==true){
         res.status(OK).json({
@@ -125,12 +118,17 @@ export async function logoutHandler(req:Request,res:Response,) {
     }
 }
 export async function getMeHandler(req:Request,res:Response,) {
-    const user = await UserModel.findById(req.userId).select("-password");
-    if(user){
+    
+    const data = {
+        userId:req.userId,
+    }
+    const resuft = await authService.me(data);
+
+    if(resuft && resuft.success ==true){
         return res.status(OK).json({
             success:true,
             message:"Lấy Thông Tin Thành Công",
-            user: user
+            user: resuft.data
         })
     }else{
         return res.status(NOT_FOUND).json({

@@ -1,7 +1,6 @@
 import { Dialog } from "@headlessui/react";
 import React from "react";
-
-const FollowersModal = ({ isOpen, onClose, users, title }: any) => (
+export const ModelDilogLikeFollow = ({ isOpen, onClose, users, title }: any) => (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center">
@@ -29,11 +28,10 @@ const FollowersModal = ({ isOpen, onClose, users, title }: any) => (
           </div>
           ) : (
             <div className="p-4 text-center font-bold">
-                <p className="text-sm text-gray-400">Bạn Không Có Người Theo Dõi</p>
+                <p className="text-sm text-gray-400">Bạn Không Có {title}</p>
             </div>
           )}
         </Dialog.Panel>
       </div>
     </Dialog>
   );
-  export default FollowersModal;

@@ -4,12 +4,12 @@ import {
     getProfile,
     setFollowOrUnfollow,
     changePasswordUser,
-    updateFullNameUser,
     uploadImageProfileUser,
-    uploadCoverImageUser,
-    updateBioUser,
+    updateProfileUs,
 
  } from "../controller/user.controller";
+
+ import { repostPost } from "../controller/post.controller";
 
 import { protectRoute } from "../middleware/protectroute";
 
@@ -19,18 +19,16 @@ import {validateImageProfile} from "../middleware/validation";
 
 import { upload } from "../config/cloudinary";
 
-routerUser.get("/getProfile/:id",catchErrors(protectRoute),catchErrors(getProfile));
-
-routerUser.post("/followOrUnfollow/:id",catchErrors(protectRoute),catchErrors(setFollowOrUnfollow));
+routerUser.get("/getProfile/:username",catchErrors(protectRoute),catchErrors(getProfile));
 
 routerUser.put("/changePassword",catchErrors(protectRoute),catchErrors(changePasswordUser));
 
-routerUser.put("/updateProfile",catchErrors(protectRoute),catchErrors(updateFullNameUser));
+routerUser.post("/followOrUnfollow/:id",catchErrors(protectRoute),catchErrors(setFollowOrUnfollow));
+
+routerUser.post("/repostPost/:id",catchErrors(protectRoute),catchErrors(repostPost));
 
 routerUser.put("/uploadImageProfile",catchErrors(protectRoute),upload.single("image"),validateImageProfile,catchErrors(uploadImageProfileUser));
 
-routerUser.put("/uploadCoverImage",catchErrors(protectRoute),upload.single("image"),validateImageProfile,catchErrors(uploadCoverImageUser));
-
-routerUser.put("/updateBio",catchErrors(protectRoute),catchErrors(updateBioUser));
+routerUser.put("/updateProfile",catchErrors(protectRoute),upload.single("image"),catchErrors(updateProfileUs));
 
 export default routerUser;

@@ -12,7 +12,7 @@ import mongoose from "mongoose";
 export const protectRoute = async (req:Request,res:Response,next:NextFunction):Promise<any>=> {
 
     const token = req.cookies.jwt;
-
+  console.log("Client Kết Nói Backend");
     if (!token) {
       return res.status(UNAUTHORIZED).json({
         success:false,

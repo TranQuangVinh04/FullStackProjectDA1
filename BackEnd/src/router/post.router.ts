@@ -17,7 +17,6 @@ import {
     getFollowersUser,
     getFollwingsUser,
     getFollowingsPostUser,
-    getUpdatePostUser,
     updatePostUser,
 } from "../controller/post.controller";
 
@@ -33,19 +32,17 @@ routerPost.post("/comment/:id",catchErrors(protectRoute),validateComment,catchEr
 
 routerPost.post("/like/:id",catchErrors(protectRoute),catchErrors(likePostUser));
 
-routerPost.get("/all",catchErrors(getAllPosts));
+routerPost.get("/all",catchErrors(protectRoute),catchErrors(getAllPosts));
+//cảnh báo còn lỗi ở router này nha
+routerPost.get("/getLikes/:id",catchErrors(protectRoute),catchErrors(getAllLikePostUser));
 
-routerPost.get("/all/like",catchErrors(getAllLikePostUser));
+routerPost.get("/getAllPostUser/:username",catchErrors(protectRoute),catchErrors(getAllPostUsers));
 
-routerPost.get("/all/user",catchErrors(getAllPostUsers));
+routerPost.get("/getFollowerUser",catchErrors(protectRoute),catchErrors(getFollowersUser));
 
-routerPost.get("/getFollowerUser",catchErrors(getFollowersUser));
+routerPost.get("/getFollwingsUser",catchErrors(protectRoute),catchErrors(getFollwingsUser));
 
-routerPost.get("/getFollwingsUser",catchErrors(getFollwingsUser));
-
-routerPost.get("/getFollowingsPostUser",catchErrors(getFollowingsPostUser));
-
-routerPost.get("/getUpdatePostUser/:id",catchErrors(protectRoute),catchErrors(getUpdatePostUser));
+routerPost.get("/getFollowingsPostUser",catchErrors(protectRoute),catchErrors(getFollowingsPostUser));
 
 routerPost.put("/updatePostUser/:id",catchErrors(protectRoute),validatePost,catchErrors(updatePostUser));
 

@@ -1,6 +1,8 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/authe.store";
+import { Eye } from "lucide-react";
+import { EyeOff } from "lucide-react";
 
 type Message = {
   type: string; text: string;
@@ -8,7 +10,11 @@ type Message = {
 
 
 const Register = () => {
-    //store
+  const [showPassword, setShowPassword] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
     const {register,isLoading} = useAuthStore()
     //state
     const [formData,setFormData] = useState({
@@ -20,6 +26,9 @@ const Register = () => {
   
     });
     const [messages, setMessages] = useState<Message[]>([]);
+    const toggleShow = (field) => {
+      setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
+    };
     //handle Function
     const handleRegister = async (e:React.FormEvent) => {
         e.preventDefault();
@@ -96,23 +105,40 @@ const Register = () => {
                                     disabled={isLoading}
                                 />
                                 <br />
-                                <input 
-                                    type="password" 
-                                    placeholder="Mật Khẩu"
-                                    className="w-full border-b-1 border-gray-300 bg-transparent  outline-none focus:outline-none size-10" 
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                                    disabled={isLoading}
-                                />
+                                <div className="relative">
+                                  <input
+                                  name="password"
+                                  placeholder="Mật Khẩu" 
+                                  type={showPassword.confirm ? 'text' : 'password'}
+                                  value={formData.password}
+                                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                  className="w-full border-b-1 border-gray-300 bg-transparent  outline-none focus:outline-none size-10"
+                                  />
+                                  <span
+                                  onClick={() => toggleShow('confirm')}
+                                  className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 cursor-pointer"
+                                  >
+                                  {showPassword.confirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                                  </span>
+                              </div>
                                 <br />
-                                <input 
-                                    type="password" 
-                                    placeholder="Nhập Lại Mật Khẩu "
-                                    className="w-full border-b-1 border-gray-300 bg-transparent  outline-none focus:outline-none size-10" 
-                                    value={formData.comfirmPassword}
-                                    onChange={(e) => setFormData({...formData, comfirmPassword: e.target.value})}
-                                    disabled={isLoading}
-                                />
+                              
+                                <div className="relative">
+                                  <input
+                                  name="password"
+                                  placeholder="Nhập Lại Mật Khẩu" 
+                                  type={showPassword.confirm ? 'text' : 'password'}
+                                  value={formData.comfirmPassword}
+                                  onChange={(e) => setFormData({...formData, comfirmPassword: e.target.value})}
+                                  className="w-full border-b-1 border-gray-300 bg-transparent  outline-none focus:outline-none size-10"
+                                  />
+                                  <span
+                                  onClick={() => toggleShow('confirm')}
+                                  className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 cursor-pointer"
+                                  >
+                                  {showPassword.confirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                                  </span>
+                              </div>
                             </div>
                             
                             <div className="Register__Button w-full flex flex-col gap-2 justify-center items-center">

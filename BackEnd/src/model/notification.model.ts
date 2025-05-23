@@ -27,15 +27,16 @@ const notificationSchema = new mongoose.Schema<NatificationDocument>({
         enum:["follow","like","CreatePost","comment"],
 
     },
-    
     read:{
         type:Boolean,
         default:false,
     },
-    uniqueIdentifier: {
-        type: String,
-        unique: true
-      }
+    uniqueIdentifier:{
+        type:String,
+        required:true,
+        unique:true,
+    },
+
 },{timestamps:true});
 
 //model
