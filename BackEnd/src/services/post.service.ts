@@ -4,7 +4,6 @@ import mongoose from "mongoose";
 import { PostDocument } from "../model/post.model";
 import { UserDocument } from "../model/user.model";
 import { v2 as cloudinary } from "cloudinary";
-import DatabaseNatification from "../model/notification.model";
 import { natificationService } from "./natification.service";
 import RepostBehaviorModel from "../model/repostHavior.model";
 
@@ -54,12 +53,14 @@ export type GetPostUserParams = {
 export type UpdatePostParams = {
     idPost: mongoose.Types.ObjectId;
     content: string;
+    media: {url:string,type:string}[];
+    userId: mongoose.Types.ObjectId;
 }
 
 export type RepostPostParams = {
     post: PostDocument;
-    text: string;
-    problem: string;
+    description: string;
+    reason: string;
 }
 export class PostService {
     private static instance: PostService;
@@ -113,8 +114,12 @@ export class PostService {
         if (post.media && post.media.length > 0) {
             for (const mediaItem of post.media) {
                 const cloundId = mediaItem.url.split("/").pop()?.split(".")[0];
-                if (cloundId) {
+                if (cloundId && mediaItem.type == "image") {
                     await cloudinary.uploader.destroy(`social-media/${cloundId}`);
+                }else{
+                    await cloudinary.uploader.destroy(`social-media/${cloundId}`, {
+                        resource_type: "video"
+                      });
                 }
             }
         }
@@ -186,29 +191,6 @@ export class PostService {
                 select: "-password",
             });
     }
-    //lỗi bug bét sửa lại nè
-    public async getAllLikePost(data: GetAllLikePostParams) {
-        const post = await PostModel.findById(data.idPost).lean();
-        
-        if(!post){
-            return {success:false,message:"Bài Viết Không Tồn Tại"}
-        }
-        
-        // Đảm bảo post.likes là một mảng
-        const likes = Array.isArray(post.likes) ? post.likes : [];
-        
-        // Tìm users với điều kiện chính xác
-        const usersLike = await UserModel.find({
-            _id: { $in: likes }
-        })
-        .select("username profileImg fullname")
-        .lean();    
-        return {
-            success: true,
-            data: usersLike,
-            message: "Tất Cả Người Đã Like Bài Viết"
-        };
-    }
 
     public async getFollowers(data: GetFollowsParams) {
         const followers = await UserModel.find({ _id: { $in: data.user.followers } });
@@ -235,7 +217,15 @@ export class PostService {
     }
 
     public async getAllPostUser(data: GetPostUserParams) {
-        const PostUser = await PostModel.find({ user: data.user._id });
+        const PostUser = await PostModel.find({ user: data.user._id })
+        .populate({
+            path: "likes",
+            select: "-password",
+        })
+        .populate({
+            path: "comments.user",
+            select: "fullname profileImg",
+        });
         if (PostUser.length == 0) {
             return { success: false, data: [], message: "Người Dùng Không Có Bài Viết Nào" };
         }
@@ -243,15 +233,50 @@ export class PostService {
     }
 
     public async updatePost(data: UpdatePostParams) {
+        const post = await PostModel.findById(data.idPost);
+        if (!post) {
+            return { success: false, message: "Post không tồn tại" };
+        }
+        if(post.user.toString() !== data.userId.toString()){
+            return {success:false,message:"Bạn không có quyền cập nhật bài viết này"};
+        }
+        const existingMediaIds = data.media.map(item => item.url.split("/").pop()?.split(".")[0]);
+        if(post.media.length > 0 && data.media.length == 0){
+            for(const mediaItem of post.media){
+                const cloudId = mediaItem.url.split("/").pop()?.split(".")[0];
+                if(cloudId){
+                    await cloudinary.uploader.destroy(`social-media/${cloudId}`);
+                }
+            }
+        }
+        if(data.media.length > 0){
+            for(const postItem of post.media){
+                const mediaId = postItem.url.split("/").pop()?.split(".")[0];
+                const resuft = existingMediaIds.includes(mediaId);
+                if(!resuft){
+                    if (postItem.type == "image") {   
+                        await cloudinary.uploader.destroy(`social-media/${mediaId}`);
+                       
+                    }else{
+                        await cloudinary.uploader.destroy(`social-media/${mediaId}`, {
+                            resource_type: "video"
+                          });
+    
+                    }
+                }
+            }
+        }
+                
         const updatedPost = await PostModel.findByIdAndUpdate(
             data.idPost,
             {
                 content: data.content,
+                media: data.media || [],
             },
             {
                 new: true
             }
-        ).populate("user", "username profileImg");
+        );
 
         if (updatedPost && updatedPost.content == data.content) {
             return { success: true, data: updatedPost, message: "Cập Nhật Post Thành Công" };
@@ -259,16 +284,16 @@ export class PostService {
     }
 
     public async repostPost(data: RepostPostParams) {
-        const {post,text,problem} = data;
-        const uniqueIdentifier = this.createUniqueIdentifier(post._id.toString(),post.user.toString(),problem);
+        const {post,description,reason} = data;
+        const uniqueIdentifier = this.createUniqueIdentifier(post._id.toString(),post.user.toString(),reason);
         const bulkOps =  [{
             updateOne: {
               filter: { uniqueIdentifier: uniqueIdentifier },
               update: {
                 $set: { 
                   post: post._id,
-                  text: text,
-                  problem: problem,
+                  text: description,
+                  problem: reason,
                   uniqueIdentifier: uniqueIdentifier,
                 },
               },

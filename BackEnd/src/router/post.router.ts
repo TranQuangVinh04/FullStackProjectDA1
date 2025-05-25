@@ -12,7 +12,6 @@ import {
     commentPostUser , 
     likePostUser ,
     getAllPosts ,
-    getAllLikePostUser ,
     getAllPostUsers,
     getFollowersUser,
     getFollwingsUser,
@@ -33,8 +32,6 @@ routerPost.post("/comment/:id",catchErrors(protectRoute),validateComment,catchEr
 routerPost.post("/like/:id",catchErrors(protectRoute),catchErrors(likePostUser));
 
 routerPost.get("/all",catchErrors(protectRoute),catchErrors(getAllPosts));
-//cảnh báo còn lỗi ở router này nha
-routerPost.get("/getLikes/:id",catchErrors(protectRoute),catchErrors(getAllLikePostUser));
 
 routerPost.get("/getAllPostUser/:username",catchErrors(protectRoute),catchErrors(getAllPostUsers));
 

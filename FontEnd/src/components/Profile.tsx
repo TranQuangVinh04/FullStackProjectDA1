@@ -3,9 +3,11 @@ import React, { useEffect, useState } from "react";
 import { useAuthStore } from "../store/authe.store";
 import { useUserStore } from "../store/user.store";
 import CreatePost from './CreatePost';
-import { ModelDilogLikeFollow } from './DialogUserFollow';
+import { ModelDilogLikeFollow } from './DialogUserFollowLike';
 import { Link, useParams } from 'react-router-dom';
 import Loading from './Loading';
+import { useNavigate } from 'react-router-dom';
+
 function Profile() {
   //store
   const { authUser ,isLoading ,autherChecking} = useAuthStore();
@@ -13,24 +15,36 @@ function Profile() {
   const { getPostsUser, postsUser } = useUserStore();
   //state
   const {username} = useParams() as {username: string};
-  const { username:Name, fullname, profileImg, followers = [], following = [] } = authUser;
+  const { username:Name, fullname, followers = [], following = [] } = authUser;
   const [activeTab, setActiveTab] = useState("posts");
   const [showModalFollowers, setShowModalFollowers] = useState(false);
   const [showModalFollowing, setShowModalFollowing] = useState(false);
-  
+  const navigate = useNavigate();
+
    let activeFollow = "follow"
+   let profileImg = null;
+ 
   authUser.following.map((item)=>{
       username == item.username ? activeFollow = "unfollow" : activeFollow = "follow"
   })  
+  
+ 
   useEffect(() => {
     const fetchData = async () => {
       const targetUsername = Name === username ? Name : username;
-      await getPostsUser(targetUsername);
-      await getProfileUser(targetUsername);
+       await getPostsUser(targetUsername);
+       const resuft = await getProfileUser(targetUsername);
+       if(resuft !==undefined && resuft !==null && resuft ==false){
+        navigate('/404')
+       }
     };
-    
+   
     fetchData();
+    
   }, [username]);
+  if(profileUser?.profileImg){
+    profileImg = profileUser?.profileImg
+  }
   //Loading
   if(!profileUser){
     return (
@@ -70,20 +84,20 @@ const handleFollow = async () => {
     <div className={`min-h-screen ${isDarkMode ? "bg-black text-white" : "bg-white text-black"} min-xl:mx-60  `}>
       {/* Header */}
       <div className="flex flex-col items-center gap-4 relative pt-10 pb-3">
-        {authUser.username == username ?<Link to={`${authUser._id}/edit`}>
+        {authUser.username == username ?<Link to={`/${authUser._id}/edit`}>
         <div className="absolute top-10 right-0 max-xl:w-40 px-3 py-3 ">
             <button className='btn btn-soft bg-[#333] text-white px-4 py-2 rounded-md cursor-pointer max-xl:text-[15px]'>Chỉnh sửa trang cá nhân</button>
             {/* <button className='btn btn-soft bg-[#333] text-white px-4 py-2 rounded-md cursor-pointer'>Kho lưu trữ</button> */}
         </div>
        </Link>:"" }
 
-        <div className="flex items-center gap-40">
+        <div className="flex items-center gap-20">
              {/* Avatar */}
              
           <div className="rounded-full border-4 border-purple-500 p-1 relative cursor-pointer">
             
             <img
-              src={ profileUser?.profileImg || "./imagebackround.png"}
+              src={profileImg || "./boy1.png"}
               alt="avatar"
               className="w-32 h-32 object-cover rounded-full"
             />
@@ -135,7 +149,7 @@ const handleFollow = async () => {
           </div>
           
         </div>
-        {username !== Name && <div className='flex gap-5 '>
+        {username !== Name && <div className='flex gap-5 max-xl:flex-col'>
             
             <button className="btn btn-accente border-[#e5e5e5] rounded-full" onClick={handleFollow}>
               {activeFollow =="unfollow" ? <><UserRoundMinus /> {"Hủy Theo Dõi"}</> : <><UserRoundPlus /> {"Theo Dõi"}</>}
@@ -210,11 +224,12 @@ const handleFollow = async () => {
             username={profileUser?.username||""}
             name={profileUser?.fullname||""}
             time={new Date(post.createdAt).toLocaleString()}
-            caption={post.content}
+            caption={post.content.replace(/^"(.*)"$/, '$1')}
             image={post.media.length > 0 ? post.media: null}
-            likes={post.likes.length}
-            liked={post.likes.includes(authUser?._id)}
-
+            likes={post.likes}
+            liked={post.likes.map((like)=>like._id).includes(authUser?._id)}
+            comments={post.comments.length}
+            comment={post.comments}
           />
         ))
       )}
@@ -251,3 +266,4 @@ function Tab({ icon: Icon, label, isActive, onClick }) {
 
 
 export default Profile;
+

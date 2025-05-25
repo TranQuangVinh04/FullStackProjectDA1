@@ -3,7 +3,6 @@ import { BAD_REQUEST } from '../constants/http';
 
 //middleware validate post
 export const validatePost = (req: Request, res: Response, next: NextFunction) => {
-
         const { content } = req.body;
         const files = req.files as Express.Multer.File[];
 

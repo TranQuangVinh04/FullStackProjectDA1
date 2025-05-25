@@ -13,6 +13,7 @@ import ProtectedRoute from './components/protectedRoute';
 import Home from "./components/Home";
 import Edit from "./components/Edit";
 import ChangePasswordForm from "./components/changePassword";
+import NotFoundPage from "./components/NotFoundPage";
 function App() {
   const {autherChecking ,isLoading ,authUser ,isLogin} = useAuthStore();
   useEffect(() => {
@@ -67,14 +68,15 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/404" element={<NotFoundPage />} />  
         </Route>
-        
+                      
       ) : (
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
       )}
 
       {/* Redirect nếu không khớp */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/404" replace />} />
     </Routes>
       <Toaster/>
     </>

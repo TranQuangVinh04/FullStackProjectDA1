@@ -200,32 +200,6 @@ export const getAllPosts = async (req: Request, res: Response) => {
         data: posts,
     });
 }
-//cái controller này lỗi nè
-export const getAllLikePostUser = async (req: Request<{id?:string},{},{}>, res: Response) => {
-    const {id} = req.params;
-    const idMongo = new mongoose.Types.ObjectId(id);
-
-
-    const data = {
-        idPost: idMongo,
-    };
-
-    const likePosts = await postService.getAllLikePost(data);
-
-    if(likePosts.success == false){
-        return res.status(OK).json({
-            success: false,
-            data: [],
-            message: likePosts.message,
-        });
-    }
-    return res.status(OK).json({
-        success: likePosts.success,
-        data: likePosts.data,
-        message: likePosts.message,
-    });
-   
-}
 
 export const getFollowersUser = async (req: Request, res: Response) => {
     const userId = req.userId;
@@ -381,21 +355,22 @@ export const getAllPostUsers = async (req: Request<{username?:string},{},{}>, re
 
 export const updatePostUser = async (req: Request<MyRequestParamsUpdatePost, {}, {
     content: string,
+    media?: {url:string,type:string}[],
 }>, res: Response) => {
     const { id } = req.params;
-    const { content } = req.body;
-
+    const { content,media } = req.body;
     if (!id) {
         return res.status(BAD_REQUEST).json({
             success: false,
             error: "Không Tìm Thấy Id Post",
         });
     }
-
     const newIdPost = new mongoose.Types.ObjectId(id);
     const data = {
         idPost: newIdPost,
         content: content,
+        media: media || [],
+        userId: req.userId,
     };
 
     const result = await postService.updatePost(data);
@@ -410,20 +385,19 @@ export const updatePostUser = async (req: Request<MyRequestParamsUpdatePost, {},
         throw new Error("Cập Nhật Post Không Thành Công");
     }
 }
-export const repostPost = async (req: Request<{id?:string},{},{text?:string,problem:string}>, res: Response) => {
+export const repostPost = async (req: Request<{id?:string},{},{description?:string,reason:string}>, res: Response) => {
     const {id} = req.params;
-    const {text , problem} = req.body;
-    console.log(text,problem,id);
+    const {description , reason} = req.body;
     if(!id){
         return res.status(BAD_REQUEST).json({
             success: false,
             message: "Vui Lòng Gửi Id Bài Post",
         });
     }
-    if(!text || !problem){
+    if(!description || !reason){
         return res.status(BAD_REQUEST).json({
             success: false,
-            message: "vui lòng gửi vấn đề khi repost về bài post",
+            message: "vui lòng gửi vấn đề khi repost hoặc mô tả vấn đề",
         });
     }
     const post = await PostDatabase.findById(id);
@@ -433,18 +407,18 @@ export const repostPost = async (req: Request<{id?:string},{},{text?:string,prob
             message: "Không Tìm Thấy Post hoặc Bài Post Đã Bị Xóa",
         });
     }
-    const userBeRepost = await UserDatabase.findById(post.user);
-    if(!userBeRepost){
-        return res.status(NOT_FOUND).json({
+    if(post.user.toString() === req.userId.toString()){
+        return res.status(BAD_REQUEST).json({
             success: false,
-            message: "Người Dùng Không Tồn Tại",
+            message: "Bạn không thể repost bài viết của chính mình",
         });
     }
+
+
     const data = {
-        userBeRepost: userBeRepost,
         post: post,
-        text: text,
-        problem: problem,
+        description: description,
+        reason: reason,
     };
     const result = await postService.repostPost(data);
     if(result && result.success == true){
