@@ -30,7 +30,7 @@ export const useUserStore = create<UserState>((set,get) => ({
     comments: 0,
     shares: 0,
     postsUser: [],
-
+    
     
 
     getPostsUser: async (username: string) => {

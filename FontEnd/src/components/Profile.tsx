@@ -7,12 +7,13 @@ import { ModelDilogLikeFollow } from './DialogUserFollowLike';
 import { Link, useParams } from 'react-router-dom';
 import Loading from './Loading';
 import { useNavigate } from 'react-router-dom';
-
+import { useMessageStore } from '../store/message.store';
 function Profile() {
   //store
   const { authUser ,isLoading ,autherChecking} = useAuthStore();
   const { updateProfileImg ,getProfileUser ,profileUser ,setFollowUser} = useUserStore();
   const { getPostsUser, postsUser } = useUserStore();
+  const { getUser, massageLoading } = useMessageStore();
   //state
   const {username} = useParams() as {username: string};
   const { username:Name, fullname, followers = [], following = [] } = authUser;
@@ -69,6 +70,16 @@ const handleImageUpload = async (e) => {
     }
   };
 };
+//Xử Lý Logic tin nhắn và chuyển trang
+const handleMessage = async () => {
+  const resuft = await getUser(profileUser?._id);
+  if(resuft){
+    navigate(`/message/${profileUser?._id}`);
+  }else{
+    return;
+  }
+
+}
 //Xử Lý Theo Dõi
 const handleFollow = async () => {
   const resuft = await setFollowUser(profileUser._id);
@@ -155,8 +166,8 @@ const handleFollow = async () => {
               {activeFollow =="unfollow" ? <><UserRoundMinus /> {"Hủy Theo Dõi"}</> : <><UserRoundPlus /> {"Theo Dõi"}</>}
               
             </button>
-            <button className="btn btn-accent border-[#e5e5e5] rounded-full">
-            <MessageCircle />Nhắn tin
+            <button className="btn btn-accent border-[#e5e5e5] rounded-full" onClick={handleMessage}>
+              {massageLoading ? <span className="loading loading-spinner"></span> : <><MessageCircle />Nhắn tin</>}
             </button>
             </div>
      }

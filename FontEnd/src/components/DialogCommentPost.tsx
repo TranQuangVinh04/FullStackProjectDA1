@@ -181,11 +181,11 @@ const DialogComment: React.FC<DialogCommentPostProps> = ({ isOpen, onClose, post
                                             <div className="bg-[#3A3B3C] rounded-lg p-3">
                                                 <p className="text-gray-200">{comment.text}</p>
                                             </div>
-                                            <div className="flex gap-4 mt-1 text-sm text-gray-400">
+                                            {/* <div className="flex gap-4 mt-1 text-sm text-gray-400">
                                                 <button className="hover:text-white">Thích</button>
                                                 <button className="hover:text-white">Phản hồi</button>
                                                 <span>{new Date(comment.createdAt).toLocaleString()}</span>
-                                            </div>
+                                            </div> */}
                                         </div>
                                     </div>
                                 </div>

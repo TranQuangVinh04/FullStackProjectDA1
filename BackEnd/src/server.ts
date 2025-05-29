@@ -11,8 +11,9 @@ import routerAuth from "./router/auth.router"
 import routerPost from './router/post.router';
 import bodyParser from 'body-parser';
 import routerUser from './router/user.router';
-const app = express();
-
+import routerMessage from './router/message.router';
+// iosocket
+import { app ,server} from "./config/socketIo";
 app.use(
     cors(
         {
@@ -31,11 +32,12 @@ app.use(express.static("public"));
 app.use("/api/auth",routerAuth);
 app.use("/api/post",routerPost);
 app.use("/api/user",routerUser);
+app.use("/api/message",routerMessage);
 
 app.use(errorHandler);
 async function startServer (){
     await DB();
-    app.listen(PORT,()=>{
+    server.listen(PORT,()=>{
         console.log(`Server Started With Port ${PORT}`);
         
     })

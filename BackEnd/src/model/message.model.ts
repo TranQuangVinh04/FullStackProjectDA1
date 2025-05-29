@@ -10,8 +10,8 @@ export interface MessageDocument extends Document{
     }[],
     status:{
         type:string,
-        enum:["read","unread"],
-        default:"unread"
+        enum:["read","delivered"],
+        default:"delivered"
     },
     createdAt:Date,
     updatedAt:Date
@@ -44,8 +44,8 @@ const messageSchema = new mongoose.Schema<MessageDocument>({
     ],
     status:{
         type:String,
-        enum:["read","unread"],
-        default:"unread"
+        enum:["read","delivered"],
+        default:"delivered"
     }
 },{timestamps:true});
 

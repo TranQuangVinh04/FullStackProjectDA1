@@ -130,10 +130,11 @@ export async function getMeHandler(req:Request,res:Response,) {
             message:"Lấy Thông Tin Thành Công",
             user: resuft.data
         })
-    }else{
+    }
+    if(resuft && resuft.success ==false){
         return res.status(NOT_FOUND).json({
             success:false,
-            message:"Người Dùng Không Tồn Tại"
+            message:resuft.message
         })
     }
     

@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import Header from "./sidebar";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 const Layout = () => {
+    const path = useLocation();
     return (
         <div className="flex" data-theme="black">
         {/* Sidebar */}
-        <div className="xl:w-64 w-[80px] min-h-screen">
+        <div className={`w-[80px] ${path.pathname === "/message" || path.pathname === "/Message" || path.pathname.split("/")[1] === "message" ? "w-[80px]" : "xl:w-64"} min-h-screen`}>
             <Header />
         </div>
 

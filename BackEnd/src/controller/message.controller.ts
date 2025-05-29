@@ -1,16 +1,40 @@
 import { Request,Response } from "express";
-import { 
-    getMessage,
-    sendMessage
- } from "../services/message.service";
+import { messageService } from "../services/message.service";
 import mongoose from "mongoose";
-import { OK } from "../constants/http";
+import { BAD_REQUEST, OK ,} from "../constants/http";
 
 interface RequestParamsMessage{
     id?:string;
 }
 interface RequestBodyMessage{
     content:string;
+}
+interface RequestParamsUser{
+    id?:string;
+}
+export const getUserId = async (req:Request<RequestParamsUser,{},{}>,res:Response)=>{
+    const {id} = req.params 
+    if(!id){
+        return res.status(BAD_REQUEST).json({
+            success:false,
+            message:"Không Có Id Người Dùng"
+        });
+    }
+    const idMongo = new mongoose.Types.ObjectId(id);
+    const user = await messageService.getUser({id:idMongo});
+    if(user && user.success ==true){
+        return res.status(OK).json({
+            success:user.success,
+            message:user.message,
+            data:user.data
+        });
+    }else{
+        return res.status(BAD_REQUEST).json({
+            success:user.success,
+            message:user.message,
+            data:[]
+        });
+    }
 }
 export const getMessageUser = async (req:Request<RequestParamsMessage,{},{}>,res:Response)=>{
     const {id} = req.params;
@@ -20,7 +44,7 @@ export const getMessageUser = async (req:Request<RequestParamsMessage,{},{}>,res
         id:idMongo,
         senderId:senderId
     }
-    const messages = await getMessage(data);
+    const messages = await messageService.getMessage(data);
     if(messages && messages.success ){
         return res.status(OK).json({
             success:messages.success,
@@ -40,7 +64,8 @@ export const sendMessageUser = async (req:Request<RequestParamsMessage,{},Reques
     const receiverId = new mongoose.Types.ObjectId(id);
 
     const files = req.files as Express.Multer.File[];
-
+    console.log(files);
+    console.log(content);
 
     const images = files ? files.map(file => ({
         url:(file as any).path,
@@ -53,7 +78,7 @@ export const sendMessageUser = async (req:Request<RequestParamsMessage,{},Reques
         content:content,
         images:images
     }
-    const message = await sendMessage(data);
+    const message = await messageService.sendMessage(data);
     if(message && message.success){
         return res.status(OK).json({
             success:message.success,
@@ -61,6 +86,10 @@ export const sendMessageUser = async (req:Request<RequestParamsMessage,{},Reques
             data:message.data
         });
     }else{
-        throw new Error("Lỗi Khi Gửi Tin Nhắn");
+        return res.status(BAD_REQUEST).json({
+            success:message.success,
+            message:message.message,
+            data:[]
+        });
     }
 }

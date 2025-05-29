@@ -14,8 +14,9 @@ import Home from "./components/Home";
 import Edit from "./components/Edit";
 import ChangePasswordForm from "./components/changePassword";
 import NotFoundPage from "./components/NotFoundPage";
+import Message from "./components/message";
 function App() {
-  const {autherChecking ,isLoading ,authUser ,isLogin} = useAuthStore();
+  const {autherChecking ,isLoading ,authUser ,isLogin,onlineUsers} = useAuthStore();
   useEffect(() => {
     autherChecking();
   }, []);
@@ -27,6 +28,7 @@ function App() {
       </div>
     )
   }
+  console.log(onlineUsers);
   return (
     <>
   <Routes>
@@ -68,11 +70,24 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/404" element={<NotFoundPage />} />  
+          <Route path={`/message/:id`}
+           element={
+            <ProtectedRoute>
+              <Message />
+            </ProtectedRoute>
+           } />
+          <Route path={`/message`}
+           element={
+            <ProtectedRoute>
+              <Message />
+            </ProtectedRoute>
+           } />
+          <Route path="/404" element={<NotFoundPage />} />
+
         </Route>
                       
       ) : (
-        <Route path="*" element={<Navigate to="/404" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       )}
 
       {/* Redirect nếu không khớp */}

@@ -174,7 +174,7 @@ const PostCard: React.FC<PostCardProps> = ({
               className={`relative ${
                 image.length === 3 && index === 0 ? 'col-span-2' : ''
               }`}
-              style={{ paddingTop: '60%' }}
+              style={{ paddingTop: '80%' }}
             >
               {img.type === "image" ? <img
                 src={img.url || "./imagebackround.png"}

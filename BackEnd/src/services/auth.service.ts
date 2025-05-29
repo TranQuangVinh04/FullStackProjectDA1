@@ -114,7 +114,9 @@ class AuthService {
                 path: "following",
                 select: "-password",
             });
-            
+        if (!users) {
+            return { success: false, message: "Người Dùng Không Tồn Tại hoặc chưa đăng nhập" };
+        }
         return { success: true, data: users };
     }
 }
