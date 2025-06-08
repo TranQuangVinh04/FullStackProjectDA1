@@ -20,9 +20,11 @@ interface PostCardProps {
     comment?: any[];
     shares?: number;
     liked?: boolean;
+    userId: string;
 }
 
 const PostCard: React.FC<PostCardProps> = ({
+  userId,
   id,
   avatar,
   username,
@@ -37,7 +39,7 @@ const PostCard: React.FC<PostCardProps> = ({
   liked,
 }) => {
 
-  const {authUser} = useAuthStore();
+  const {authUser,onlineUsers} = useAuthStore();
   const [showModalLike, setShowModalLike] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -70,17 +72,25 @@ const PostCard: React.FC<PostCardProps> = ({
     }
   }
   return (
-    <div className="bg-[#18191a] text-white rounded-md shadow-md max-w-[650px] mx-auto my-6 p-4">
+    <div className="bg-[#18191a] text-white rounded-md shadow-md max-w-[700px] mx-auto my-6 p-4">
       {/* Header */}
       <div key={id} className="flex items-center justify-between mb-3">
      
         <div className="flex items-center gap-4 w-full h-full">
           
-          <img
-            src={avatar ||"./imagebackround.png"}
-            alt="avatar"
-            className="w-10 h-10 rounded-full object-cover cursor-pointer select-none"
-          />
+          <div className="relative">
+            <img
+              src={avatar ||"./imagebackround.png"}
+              alt="avatar"
+              className="w-10 h-10 rounded-full object-cover cursor-pointer select-none"
+            />
+            {onlineUsers.includes(userId) && (
+                                <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-black" />
+            )}
+          </div>
+           
+
+          
           <div className="flex flex-col gap-1 ">
             <a href={`/${username}`} className="cursor-pointer">
             <h2 className="font-semibold cursor-pointer relative group ">

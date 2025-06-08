@@ -4,6 +4,7 @@ import { toast } from "react-hot-toast";
 import { useAuthStore } from "./authe.store";
 import { url } from "inspector";
 interface UserState {
+    allPosts: any,
     profileUser: any,
     likesPost: any,
     postsUser: any,
@@ -21,9 +22,12 @@ interface UserState {
     updatePost: (id: string, updatedPost: { content: string; media?: { url: string; type: "image" | "video" }[] }) => Promise<boolean>
     reportPost: ({postId, reason, description}:{postId: string, reason: string, description: string}) => Promise<boolean>
     commentPost: (id: string, comment: string) => Promise<boolean>
+    createPost: (post: any) => Promise<boolean>
+    getPosts: () => Promise<any>
 }
 
 export const useUserStore = create<UserState>((set,get) => ({
+    allPosts: [],
     profileUser: null,
     likesPost: [],
     like: 0,
@@ -163,6 +167,28 @@ export const useUserStore = create<UserState>((set,get) => ({
                 return true;
             } catch (error:any) {
                 toast.error(error.response.data.message);
+                return false;
+            }
+        },
+        createPost: async (post: any) => {
+            useAuthStore.setState({ isLoading: true });
+            try {
+                const response = await axiosInstanace.post("/post/create", post);
+                toast.success(response.data.message);
+                useAuthStore.setState({ isLoading: false });
+                return true;
+            } catch (error:any) {
+                toast.error(error.response.data.message);
+                useAuthStore.setState({ isLoading: false });
+                return false;
+            }
+        },
+        getPosts: async () => {
+            try {
+                const response = await axiosInstanace.get("/post/all");
+                set({allPosts: response.data.data});
+            } catch (error:any) {
+                console.log("Không Lấy Được Các Bài Post");
                 return false;
             }
         }

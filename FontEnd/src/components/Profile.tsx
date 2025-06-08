@@ -8,18 +8,20 @@ import { Link, useParams } from 'react-router-dom';
 import Loading from './Loading';
 import { useNavigate } from 'react-router-dom';
 import { useMessageStore } from '../store/message.store';
+import CreatePostDialog from './CreatePostDialog';
 function Profile() {
   //store
   const { authUser ,isLoading ,autherChecking} = useAuthStore();
   const { updateProfileImg ,getProfileUser ,profileUser ,setFollowUser} = useUserStore();
   const { getPostsUser, postsUser } = useUserStore();
-  const { getUser, massageLoading } = useMessageStore();
+  const { massageLoading, setSelectedUser } = useMessageStore();
   //state
   const {username} = useParams() as {username: string};
   const { username:Name, fullname, followers = [], following = [] } = authUser;
   const [activeTab, setActiveTab] = useState("posts");
   const [showModalFollowers, setShowModalFollowers] = useState(false);
   const [showModalFollowing, setShowModalFollowing] = useState(false);
+  const [showCreatePostDialog, setShowCreatePostDialog] = useState(false);
   const navigate = useNavigate();
 
    let activeFollow = "follow"
@@ -72,12 +74,8 @@ const handleImageUpload = async (e) => {
 };
 //Xử Lý Logic tin nhắn và chuyển trang
 const handleMessage = async () => {
-  const resuft = await getUser(profileUser?._id);
-  if(resuft){
-    navigate(`/message/${profileUser?._id}`);
-  }else{
-    return;
-  }
+  setSelectedUser(profileUser);
+  navigate("/message");
 
 }
 //Xử Lý Theo Dõi
@@ -222,18 +220,18 @@ const handleFollow = async () => {
     <div>
       {postsUser.length === 0 ? (
         <div className="text-center text-gray-400">
-          <p className="text-xl">Chia sẻ ảnh đầu tiên của bạn</p>
+          <p className="text-xl">Chia sẻ ảnh hoặc video đầu tiên của bạn</p>
           <p className="text-sm mt-2">Khi bạn chia sẻ ảnh, ảnh sẽ xuất hiện trên trang cá nhân của bạn.</p>
-          <button className='bg-blue-500 text-white px-4 py-2 rounded-md mt-4'>Chia sẻ ảnh đầu tiên</button>
+          <button className='bg-blue-500 text-white px-4 py-2 rounded-md mt-4 cursor-pointer' onClick={()=>{setShowCreatePostDialog(true)}}>Chia sẻ ảnh hoặc video đầu tiên</button>
         </div>
       ) : (
         postsUser.map((post) => (
           <CreatePost
-
+            userId={post?.user?._id||""}
             id={post._id}
-            avatar={profileUser?.profileImg||""}
-            username={profileUser?.username||""}
-            name={profileUser?.fullname||""}
+            avatar={post?.user?.profileImg||""}
+            username={post?.user?.username||""}
+            name={post?.user?.fullname||""}
             time={new Date(post.createdAt).toLocaleString()}
             caption={post.content.replace(/^"(.*)"$/, '$1')}
             image={post.media.length > 0 ? post.media: null}
@@ -244,6 +242,7 @@ const handleFollow = async () => {
           />
         ))
       )}
+      <CreatePostDialog isOpen={showCreatePostDialog} onClose={()=>{setShowCreatePostDialog(false)}} />
     </div>
   )}
 

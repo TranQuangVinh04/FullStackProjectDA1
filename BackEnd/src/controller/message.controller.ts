@@ -12,30 +12,7 @@ interface RequestBodyMessage{
 interface RequestParamsUser{
     id?:string;
 }
-export const getUserId = async (req:Request<RequestParamsUser,{},{}>,res:Response)=>{
-    const {id} = req.params 
-    if(!id){
-        return res.status(BAD_REQUEST).json({
-            success:false,
-            message:"Không Có Id Người Dùng"
-        });
-    }
-    const idMongo = new mongoose.Types.ObjectId(id);
-    const user = await messageService.getUser({id:idMongo});
-    if(user && user.success ==true){
-        return res.status(OK).json({
-            success:user.success,
-            message:user.message,
-            data:user.data
-        });
-    }else{
-        return res.status(BAD_REQUEST).json({
-            success:user.success,
-            message:user.message,
-            data:[]
-        });
-    }
-}
+
 export const getMessageUser = async (req:Request<RequestParamsMessage,{},{}>,res:Response)=>{
     const {id} = req.params;
     const senderId = req.userId;
@@ -64,8 +41,6 @@ export const sendMessageUser = async (req:Request<RequestParamsMessage,{},Reques
     const receiverId = new mongoose.Types.ObjectId(id);
 
     const files = req.files as Express.Multer.File[];
-    console.log(files);
-    console.log(content);
 
     const images = files ? files.map(file => ({
         url:(file as any).path,
@@ -89,6 +64,24 @@ export const sendMessageUser = async (req:Request<RequestParamsMessage,{},Reques
         return res.status(BAD_REQUEST).json({
             success:message.success,
             message:message.message,
+            data:[]
+        });
+    }
+}
+export const getMessageList = async (req:Request,res:Response)=>{
+    const {id} = req.params;
+    const idMongo = new mongoose.Types.ObjectId(id);
+    const messages = await messageService.getMessageList(idMongo);
+    if(messages && messages.success){
+        return res.status(OK).json({
+            success:messages.success,
+            message:messages.message,
+            data:messages.data
+        });
+    }else{
+        return res.status(BAD_REQUEST).json({
+            success:messages.success,
+            message:messages.message,
             data:[]
         });
     }

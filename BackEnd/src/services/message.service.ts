@@ -29,16 +29,7 @@ class MessageService {
         }
         return MessageService.instance;
     }
-    public async getUser(data:RequestParamsUser){
-       
-            const {id} = data;
-            const user = await DatabaseUser.findById(id).select("-password");
-            if(!user){
-                return {success:false,message:"Người Dùng Không Tồn Tại"};
-            }
-            return {success:true,message:"Lấy Người Dùng Thành Công",data:user};
-        
-    }
+ 
 
     public async getMessage(data: RequestParamsMessage) {
        
@@ -109,6 +100,62 @@ class MessageService {
             };
         
     }
+    public async getMessageList(userId: mongoose.Types.ObjectId) {
+        // Lấy tin nhắn cuối cùng của mỗi cuộc trò chuyện
+        const listMessage = await DatabaseMessage.aggregate([
+            // Tìm tất cả tin nhắn liên quan đến userId
+            {
+                $match: {
+                    $or: [
+                        { senderId: userId },
+                        { receiverId: userId }
+                    ]
+                }
+            },
+            // Sắp xếp theo thời gian mới nhất
+            {
+                $sort: { createdAt: -1 }
+            },
+            // Nhóm theo cặp người nhắn tin
+            {
+                $group: {
+                    _id: {
+                        $cond: {
+                            if: { $eq: ["$senderId", userId] },
+                            then: "$receiverId",
+                            else: "$senderId"
+                        }
+                    },
+                    // Lấy tin nhắn đầu tiên sau khi sort (tức là tin nhắn mới nhất)
+                    lastMessage: { $first: "$$ROOT" }
+                }
+            },
+            // Thay thế document bằng tin nhắn cuối
+            {
+                $replaceRoot: { newRoot: "$lastMessage" }
+            }
+        ]).exec();
+
+        // Populate thông tin người dùng
+        const populatedMessages = await DatabaseMessage.populate(listMessage, [
+            {
+                path: 'senderId',
+                select: 'username fullname profileImg _id'
+            },
+            {
+                path: 'receiverId',
+                select: 'username fullname profileImg _id'
+            }
+        ]);
+
+        return {
+            success: true,
+            message: "Lấy Danh Sách Tin Nhắn Thành Công",
+            data: populatedMessages
+        };
+    }
 }
+
+
 
 export const messageService = MessageService.getInstance();

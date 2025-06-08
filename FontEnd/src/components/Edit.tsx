@@ -36,7 +36,7 @@ const FormCapNhatThongTin = () => {
 
     const resuft = await updateProfile(formData);
     if(resuft){
-        navigate('/profile');
+        navigate(`/${authUser.username}`);
         await autherChecking();
         
     }

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/authe.store";
 import { Eye } from "lucide-react";
 import { EyeOff } from "lucide-react";
+import { Spinner } from "./ui/Spinner";
 
 type Message = {
   type: string; text: string;
@@ -143,7 +144,13 @@ const Register = () => {
                             
                             <div className="Register__Button w-full flex flex-col gap-2 justify-center items-center">
 
-                                <button className="btn btn-active w-[70%]">{isLoading ? <span className="loading loading-spinner"></span> : "Đăng Ký"}</button>
+                                <button 
+                                    type="submit" 
+                                    className="btn btn-active w-[70%]"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? <Spinner size="sm" /> : "Đăng Ký"}
+                                </button>
                                 
                                 
                             </div>

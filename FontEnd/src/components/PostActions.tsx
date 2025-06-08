@@ -21,7 +21,6 @@ const PostActions: React.FC<PostActionsProps> = ({
   id, 
   initialLikes = 0,
   initialComments = 0,
-  initialShares = 0,
   likedUser = false,
   username,
   image,
@@ -48,18 +47,14 @@ const PostActions: React.FC<PostActionsProps> = ({
       setLikes(likes - 1);
       setLiked(resuft);
     }
-    await getPostsUser(username);
-  };
 
-  const handleComment = () => {
-    
+    await getPostsUser(name);
   };
-
   return (
     <div className="border-t border-gray-700 mt-3 pt-2 flex justify-around text-sm text-gray-300">
       <button
         className={`flex items-center gap-1 cursor-pointer ${
-          liked ? "text-blue-500" : "hover:text-white"
+          liked ? "text-blue-500" : "hover:text-white select-none"
         }`}
         onClick={handleLike}
       >
@@ -67,7 +62,7 @@ const PostActions: React.FC<PostActionsProps> = ({
         Thích {likes > 0 ? `` : ""}
       </button>
       <button
-        className="flex items-center gap-1 hover:text-white cursor-pointer"
+        className="flex items-center gap-1 hover:text-white cursor-pointer select-none"
         onClick={() => setShowModalComment(true)}
       >
         <MessageCircle size={16} />

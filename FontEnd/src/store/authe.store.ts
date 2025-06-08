@@ -84,6 +84,7 @@ export const useAuthStore = create<AuthState>((set,get) => ({
                 isLoading: false,
             })
             get().connectSocket();
+            toast.success(response.data.message);
         } catch (error:any) {
             toast.error(error.response.data.message);
             set({authUser: null,

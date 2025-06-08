@@ -34,8 +34,8 @@ const changePasswordSchema = z.object({
 })
 
 const updateProfileSchema = z.object({
-    fullname: z.string().min(1).max(200).optional(),
-    bio: z.string().min(1).max(200).optional(),
+    fullname: z.string().min(5).max(200).optional(),
+    bio: z.string().max(200).optional(),
 })
 
 //controller

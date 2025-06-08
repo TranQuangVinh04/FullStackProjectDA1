@@ -18,16 +18,37 @@ const Message = () => {
     //đây là phần thông tin người dùng và các user đang ở trạng thái onlline
     const {authUser, onlineUsers} = useAuthStore();
     //đây là phần liên quan đến người dùng sẽ nhắn với mình và tin nhắn sẽ được hiển thị
-    const {messages, setSelectedUser, selectedUser, getUser,getMessage,sendMessage} = useMessageStore();
+        const {
+            messages, 
+            setSelectedUser, 
+            selectedUser, 
+            // getUser,
+            getMessage,
+            sendMessage,
+            subscribeToMessages,
+            unSubscribeToMessages,
+            getUserList,
+            userList
+        } = useMessageStore();
     //dữ liệu demo
-    const filteredUsers: any[] = [{data:{_id: 1, fullname: "John Doe", username: "John Doe", profileImg: "https://via.placeholder.com/150", message: "Hello, how are you?", time: "12:00 PM"}}]
-    console.log(selectedUser);
+    
     const path = useLocation();
     const[message, setMessage] = useState<string>("");
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messageContainerRef = useRef<HTMLDivElement>(null);
+    const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
+    const handleUserSelect = async(user: any) => {
+        if(user){
+            await setSelectedUser(user);
+        }else{
+           return;
+        }
+    
 
+        
+    }
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (files.length > 0) {
@@ -50,20 +71,24 @@ const Message = () => {
         try {
             if (!message.trim() && selectedImages.length === 0) return;  
             // Gửi tin nhắn lên server
-            const result = await sendMessage(selectedUser.data._id, message, selectedImages);
+            const result = await sendMessage(selectedUser._id, message, selectedImages);
             
             if (result) {
                 // Cập nhật lại danh sách tin nhắn từ server
-                await getMessage(selectedUser.data._id);
+                await getMessage(selectedUser._id);
                 // Reset form
                 setMessage("");
                 setSelectedImages([]);
                 setImagePreviews([]);
+                await getUserList(authUser._id);
             }
         } catch (error) {
             console.error('Error sending message:', error);
         }
     };
+    useEffect(() => {
+        getUserList(authUser._id);
+    }, []);
     // Cleanup URLs khi component unmount
     useEffect(() => {
         return () => {
@@ -72,10 +97,15 @@ const Message = () => {
     }, [imagePreviews]);
     useEffect(() => {
         if(selectedUser){
-            getMessage(selectedUser.data._id);
+            getMessage(selectedUser._id);
         }
     }, [selectedUser]);
-
+    useEffect(() => {
+        subscribeToMessages();
+        return () => {
+            unSubscribeToMessages();
+        };
+    }, [selectedUser,subscribeToMessages,unSubscribeToMessages]);
     class HandleSendMassage {
         private static intsance: HandleSendMassage;
         private constructor(){}
@@ -93,28 +123,57 @@ const Message = () => {
         }
     }
     const handleMessage = HandleSendMassage.getInstance();
-    useEffect(() => {
-        if(path){
-            getUser(path.pathname.split("/")[2]);
-        }
+    // useEffect(() => {
+    //     if(path){
+    //         getUser(path.pathname.split("/")[2]);
+    //     }
         
-    }, [path.pathname]);
-
+    // }, [path.pathname]);
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (shouldScrollToBottom && messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ 
+                behavior: "smooth",
+                block: "end"
+            });
+        }
     };
+
+    // Kiểm tra xem người dùng có đang ở gần bottom không
+    const handleScroll = () => {
+        if (messageContainerRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = messageContainerRef.current;
+            const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+            setShouldScrollToBottom(isNearBottom);
+        }
+    };
+    useEffect(() => {
+        const messageContainer = messageContainerRef.current;
+        if (messageContainer) {
+            messageContainer.addEventListener('scroll', handleScroll);
+        }
+        return () => {
+            if (messageContainer) {
+                messageContainer.removeEventListener('scroll', handleScroll);
+            }
+        };
+    }, []);
 
     useEffect(() => {
         scrollToBottom();
     }, [messages.messages]);
 
-    
-
+    const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            await handleSendMessage();
+        }
+    };
   return (
-    <div className='w-full h-full flex'>
+    <div className='w-full h-full flex '>
         {/* Sidebar */}
-        <div className='w-1/5 h-full border-r border-gray-700 bg-black text-white' data-theme="black">
-            {/* Header */}
+        <div className='w-1/5 h-full border-r border-gray-700 bg-black text-white ' data-theme="black">
+          
+                 {/* Header */}
             <div className='flex items-center p-4 border-b border-gray-700 '>
                 <div className='relative'>
                 <img 
@@ -133,18 +192,6 @@ const Message = () => {
                 </div>
             </div>
 
-            {/* Search Bar */}
-            <div className='p-4'>
-                <div className='relative'>
-                    <input
-                        type="text"
-                        placeholder="Tìm kiếm tin nhắn..."
-                        className='w-full bg-gray-800 text-white rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-                    />
-                    <Search className='absolute left-3 top-2.5 text-gray-400' size={20} />
-                </div>
-            </div>
-
             {/* Messages List */}
             <div className='flex flex-col overflow-y-auto h-[calc(100vh-180px)]'>
                 <div className='px-4 py-2'>
@@ -154,49 +201,83 @@ const Message = () => {
                     </span>
                 </div>
 
-                {/*  Cần Lên Y Tưởng Lại*/}
 
-                {filteredUsers.length === 0 && (
+                <div className='px-2 py-2'>
+                    {userList.map((user, index) => (
+                        <div
+                            key={user.senderId._id===authUser._id ? user.receiverId._id : user.senderId._id}
+                            className='flex items-center gap-3 p-2 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors'
+                            onClick={() => handleUserSelect(user.senderId._id===authUser._id ? user.receiverId : user.senderId)}
+                        >
+                            <div className='relative'>
+                                <img
+                                    src={user.senderId._id===authUser._id ? user.receiverId.profileImg : user.senderId.profileImg}
+                                    alt="User Avatar"
+                                    className='w-12 h-12 rounded-full object-cover max-xl:hidden'
+                                />
+                                {onlineUsers.includes(user.senderId._id===authUser._id ? user.receiverId._id : user.senderId._id) && (
+                                <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-black" />
+                            )}
+                            </div>
+                            <div className='flex-1'>
+                                <h3 className='font-semibold text-white select-none'>{user.senderId._id === authUser._id ? user.receiverId.fullname : user.senderId.fullname}</h3>
+                                <p className='text-sm text-gray-400 truncate select-none'>{user.text}</p>
+                            </div>
+                            <span className='text-xs text-gray-400 select-none'>{new Date(user.createdAt).toLocaleString()}</span>
+                        </div>
+                    ))}
+                    {userList.length === 0 && (
                             <div className="text-center text-gray-400 py-8">
                                 Không có tin nhắn nào
                             </div>
                 )}
+                </div>
             </div>
-        </div>
+        </div>        
+            
 
         {/* Chat Area */}
         <div className='flex-1'>
             {selectedUser ? (
-                <div className='h-full flex flex-col'>
+                <div className='h-screen flex flex-col'>
                     {/* Chat header */}
-                    <div className='p-4 border-b border-gray-700 flex items-center'>
-                        <img
-                            src={selectedUser.data.profileImg}
-                            alt={selectedUser.data.fullname}
-                            className='w-10 h-10 rounded-full object-cover'
-                        />
-                            {onlineUsers.includes(selectedUser.data._id) && (
+                    <div className='p-4 border-b border-gray-700 flex items-center bg-black sticky top-0 z-10'>
+                        <div className='relative'>
+                            <img
+                                src={selectedUser.profileImg}
+                                alt={selectedUser.fullname}    
+                                className='w-10 h-10 rounded-full object-cover '
+                            />
+                            {onlineUsers.includes(selectedUser._id) && (
                                 <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-black" />
                             )}
+                        </div>
                         <div className='ml-3'>
-                            <h2 className='text-white font-semibold'>{selectedUser.data.fullname}</h2>
-                            
+                            <h2 className='text-white font-semibold'>{selectedUser.fullname}</h2>
                         </div>
                     </div>
 
-                    {/* Messages will go here */}
-                    <div className='flex-1 p-4 overflow-y-auto'>
-                        <div className='space-y-4'>
+                    {/* Messages container */}
+                    <div 
+                        ref={messageContainerRef}
+                        className='flex-1 overflow-y-auto px-4'
+                        style={{ 
+                            scrollBehavior: 'smooth',
+                            minHeight: '0'
+                        }}
+                    >
+                        <div className='py-4 space-y-4'>
                             {[...messages.messages]
                                 .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
                                 .map((message) => (
+                                    <>
                                 <div 
                                     key={message._id}
                                     className={`flex items-start gap-2 ${message.senderId._id === authUser._id ? 'justify-end' : ''}`}
                                 >
                                     {message.senderId._id !== authUser._id && (
                                         <img
-                                            src={selectedUser.data.profileImg}
+                                            src={selectedUser.profileImg}
                                             alt="Avatar"
                                             className='w-8 h-8 rounded-full object-cover'
                                         />
@@ -235,19 +316,24 @@ const Message = () => {
                                         />
                                     )}
                                 </div>
-                                <div className='flex items-start gap-2'>
-                                    <p>hello</p>
+                                <div className={`flex items-center gap-2 ${message.senderId._id === authUser._id ? 'justify-end' : ''}`}>   
+                                    {message.image && message.image.length > 0 && message.image.map((image: any) => (
+                                        <img src={image.url} alt="" className='w-50 h-50 object-cover' />
+                                    ))}
                                 </div>
-                            ))}
+                                </>
+                            )
+                        )
+                            }
                             <div ref={messagesEndRef} />
                         </div>
                     </div>
 
-                    {/* Chat input */}
-                    <div className='p-4 border-t border-gray-700'>
+                    {/* Chat input - Fixed at bottom */}
+                    <div className='border-t border-gray-700 bg-black sticky bottom-0 z-10'>
                         {/* Image Preview Grid */}
                         {imagePreviews.length > 0 && (
-                            <div className='mb-4'>
+                            <div className='p-4 pb-0'>
                                 <div className='grid grid-cols-8 gap-1 sm:gap-2 overflow-x-auto pb-2'>
                                     {imagePreviews.map((preview, index) => (
                                         <div key={index} className='relative aspect-square min-w-[60px] sm:min-w-[80px]'>
@@ -284,7 +370,7 @@ const Message = () => {
                             </div>
                         )}
 
-                        <div className='flex items-center gap-2'>
+                        <div className='p-4 flex items-center gap-2'>
                            
                             <button className='text-gray-400 hover:text-white transition-colors p-2 cursor-pointer' onClick={() => handleMessage.sendMessageEmoji()}>
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -327,6 +413,7 @@ const Message = () => {
                                 className='flex-1 bg-gray-700 text-white rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
+                                onKeyDown={handleKeyDown}
                             />
 
                             {/* Send button */}
@@ -338,8 +425,8 @@ const Message = () => {
                         </div>
                     </div>
                 </div>
-            ) : (
-                <div className='h-full flex items-center justify-center text-gray-400'>
+            ) : (   
+                <div className='h-screen flex items-center justify-center text-gray-400'>
                     <NoChatContent />
                 </div>
             )}

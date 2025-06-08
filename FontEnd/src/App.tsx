@@ -1,5 +1,5 @@
 import React from "react";
-import Login from './components/login'
+import Login from './components/Login'
 import Register from './components/register'
 import Profile from './components/Profile'
 import { Routes,Route, Navigate } from "react-router-dom";
@@ -20,7 +20,8 @@ function App() {
   useEffect(() => {
     autherChecking();
   }, []);
-  
+
+
   if(isLoading && !authUser){
     return (
       <div className="flex justify-center items-center h-screen">
@@ -28,7 +29,6 @@ function App() {
       </div>
     )
   }
-  console.log(onlineUsers);
   return (
     <>
   <Routes>

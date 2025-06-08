@@ -45,7 +45,7 @@ export const createPostUser = async (req: Request<{}, {}, MyRequestBodyCreatePos
     const { content } = req.body;
     const userId = req.userId;
     const files = req.files as Express.Multer.File[];
-
+    
     const media = files ? files.map(file => ({
         url: (file as any).path,
         type: file.mimetype.startsWith("image") ? "image" : "video",
