@@ -394,7 +394,7 @@ export const repostPost = async (req: Request<{id?:string},{},{description?:stri
             message: "Vui Lòng Gửi Id Bài Post",
         });
     }
-    if(!description || !reason){
+    if(!reason){
         return res.status(BAD_REQUEST).json({
             success: false,
             message: "vui lòng gửi vấn đề khi repost hoặc mô tả vấn đề",
@@ -417,7 +417,7 @@ export const repostPost = async (req: Request<{id?:string},{},{description?:stri
 
     const data = {
         post: post,
-        description: description,
+        description: description||"",
         reason: reason,
     };
     const result = await postService.repostPost(data);
@@ -436,4 +436,28 @@ export const repostPost = async (req: Request<{id?:string},{},{description?:stri
     
     
     
+}
+export const searchPost = async (req: Request, res: Response) => {
+    const query = req.query.q as string;
+   
+    if (!query) {
+        return res.status(BAD_REQUEST).json({
+            success: false,
+            message: "Vui lòng nhập từ khóa tìm kiếm"
+        });
+    }
+    const result = await postService.searchPost(query);
+    if(result && result.success == true){
+        return res.status(OK).json({
+            success: result.success,
+            message: result.message,
+            posts: result.posts,
+        });
+    }
+    if(result && result.success == false){
+        return res.status(NOT_FOUND).json({
+            success: result.success,
+            message: result.message,
+        });
+    }
 }

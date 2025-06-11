@@ -16,8 +16,8 @@ const NoChatContent = () => {
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold text-white">Chào Mừng Bạn Hiện Tại Bạn Đang Không Có Tin Nhắn</h2>
-        <p className="text-base text-white">
+        <h2 className="text-2xl font-bold text-white select-none">Chào Mừng Bạn Hiện Tại Bạn Đang Không Có Tin Nhắn</h2>
+        <p className="text-base text-white select-none">
           Mong Bạn sẽ có những trãi nghiệm tốt đẹp và lưu dữ những kỹ niệm với bạn bè tại chat box này!!
         </p>
       </div>

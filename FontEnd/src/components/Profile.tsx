@@ -26,11 +26,8 @@ function Profile() {
 
    let activeFollow = "follow"
    let profileImg = null;
- 
-  authUser.following.map((item)=>{
-      username == item.username ? activeFollow = "unfollow" : activeFollow = "follow"
-  })  
-  
+   const followingUser = authUser.following.map((item)=>item._id)
+   followingUser.includes(profileUser?._id) ? activeFollow = "unfollow" : activeFollow = "follow"
  
   useEffect(() => {
     const fetchData = async () => {
@@ -56,7 +53,6 @@ function Profile() {
       </div>
     )
   }
-
 //Xử Lý Upload ảnh
 const handleImageUpload = async (e) => {
   const file = e.target.files[0];
@@ -88,7 +84,13 @@ const handleFollow = async () => {
 }
   //mode
   const isDarkMode = true;
-  
+  if(isLoading && !authUser){
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loading />
+      </div>
+    )
+  }
   return (
     <div className={`min-h-screen ${isDarkMode ? "bg-black text-white" : "bg-white text-black"} min-xl:mx-60  `}>
       {/* Header */}
@@ -218,14 +220,18 @@ const handleFollow = async () => {
       
   {activeTab === "posts" && (
     <div>
-      {postsUser.length === 0 ? (
+      {postsUser.length === 0 && profileUser.username === authUser.username ? (
         <div className="text-center text-gray-400">
           <p className="text-xl">Chia sẻ ảnh hoặc video đầu tiên của bạn</p>
           <p className="text-sm mt-2">Khi bạn chia sẻ ảnh, ảnh sẽ xuất hiện trên trang cá nhân của bạn.</p>
           <button className='bg-blue-500 text-white px-4 py-2 rounded-md mt-4 cursor-pointer' onClick={()=>{setShowCreatePostDialog(true)}}>Chia sẻ ảnh hoặc video đầu tiên</button>
         </div>
+      ) : profileUser.username !== authUser.username && postsUser.length === 0 ? (
+        <div className="text-center text-gray-400">
+          <p className="text-xl">Người dùng này chưa có bài viết abc.</p>
+        </div>
       ) : (
-        postsUser.map((post) => (
+        postsUser.map((post:any) => (
           <CreatePost
             userId={post?.user?._id||""}
             id={post._id}

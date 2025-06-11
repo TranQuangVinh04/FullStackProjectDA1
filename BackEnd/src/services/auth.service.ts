@@ -105,7 +105,7 @@ class AuthService {
     }
 
     public async me(data: GetMeParams) {
-        const users = await UserModel.findById(data.userId)
+        const users = await UserModel.findById(data.userId).select("-password -email")
             .populate({
                 path: "followers",
                 select: "-password",

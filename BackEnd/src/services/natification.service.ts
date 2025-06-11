@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import DatabaseNatification from "../model/notification.model";
+import { getReceiverSocketId, io } from "../config/socketIo";
 interface CreateNotificationParams {
     from: mongoose.Types.ObjectId;
     to: mongoose.Types.ObjectId;
@@ -17,9 +18,7 @@ class NatificationService {
         }
         return NatificationService.instance;
     }
-    private createUniqueIdentifier(senderId: string, recipientId: string, type: string) {
-        return `${senderId}_${recipientId}_${type}`;
-    }
+
    
       public async createManyNotification(data: CreateNotificationParams[]): Promise<mongoose.mongo.BulkWriteResult> {
         const bulkOps = data.map((item) => ({
@@ -43,20 +42,15 @@ class NatificationService {
     
     public async createNotification(data: CreateNotificationParams) {
         
-      const uniqueIdentifier = this.createUniqueIdentifier(
-        data.from.toString(),
-        data.to.toString(),
-        data.type,
-       
-      );
+    
   
       const notification = await DatabaseNatification.findOneAndUpdate(
-        { uniqueIdentifier },
+        { uniqueIdentifier:data.uniqueIdentifier },
         {
           from: data.from,
           to: data.to,
           type: data.type,
-          uniqueIdentifier
+          uniqueIdentifier:data.uniqueIdentifier
         },
         {
           upsert: true,
@@ -64,7 +58,10 @@ class NatificationService {
           setDefaultsOnInsert: true
         }
       );
-  
+      const receiverSocketId = getReceiverSocketId(data.to.toString());
+      if(receiverSocketId ){
+        io.to(receiverSocketId).emit("newNotification", notification);
+      }
       return notification;
     }
     public async getNotification(data: {user:mongoose.Types.ObjectId}) {
@@ -78,8 +75,8 @@ class NatificationService {
         return notification;
     }
     public async readNotification(data: {id:mongoose.Types.ObjectId}) {
-        const notification = await DatabaseNatification.findByIdAndUpdate(data.id, {read:true});
-        return {success:true,message:"Đã Đọc Thông Báo",data:notification};
+        const notification = await DatabaseNatification.updateMany({to:data.id}, {read:true});
+        return {success:true,message:"Đã Đọc Thông Báo"};
     }
 
 }

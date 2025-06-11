@@ -40,7 +40,7 @@ const DialogComment: React.FC<DialogCommentPostProps> = ({
   likes, 
   username 
 }) => {
-  const { commentPost,getPostsUser } = useUserStore();
+  const { commentPost,getPostsUser,getPosts } = useUserStore();
   const { authUser } = useAuthStore();
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState<Comment[]>(commentss);
@@ -69,6 +69,7 @@ const DialogComment: React.FC<DialogCommentPostProps> = ({
         setComments(prev => [...prev, newComment]);
         setComment('');
         getPostsUser(username);
+        getPosts();
       }
     } catch (error) {
       console.error('Error posting comment:', error);

@@ -44,7 +44,10 @@ export const getProfile = async (req: Request<MyRequestParams>, res: Response) =
     if (!username) {
        throw new Error("Chưa Có Username Người Dùng");
     }
-    const user = await UserDatabase.findOne({username:username}).select("-password -role -createdAt -updatedAt -__v").populate("followers").populate("following");
+    const user = await UserDatabase.findOne({username:username})
+    .select("-password -role -createdAt -updatedAt -__v")
+    .populate("followers", "-password -email -role")
+    .populate("following", "-password -email -role -createdAt -updatedAt -__v");
     if (!user) {  
         return res.status(NOT_FOUND).json({
             success: false,
@@ -202,3 +205,62 @@ export const updateProfileUs = async (req: Request<{}, {}, { fullname?: string; 
         message: "Đã Cập Nhật Thông Tin Người Dùng"
     });
 }
+
+export const searchUsers = async (req: Request, res: Response) => {
+    const query = req.query.q as string;
+    
+    if (!query) {
+        return res.status(BAD_REQUEST).json({
+            success: false,
+            message: "Vui lòng nhập từ khóa tìm kiếm"
+        });
+    }
+    const result = await userService.searchUsers(query);
+    
+    if (result && result.success==true) {
+        return res.status(OK).json({
+            success: result.success,
+            message: result.message,
+            users: result.users
+        });
+    } else {
+        return res.status(NOT_FOUND).json({
+            success: false,
+            message: result.message
+        });
+    }
+}
+export const getSuggestionUser = async (req: Request, res: Response) => {
+    const userId = req.userId;
+    const result = await userService.getSuggestionUser(userId.toString());
+    if(result && result.success==true){
+        return res.status(OK).json({
+            success:result.success,
+            message:result.message,
+            data:result.data
+        });
+    }
+    else{
+        return res.status(BAD_REQUEST).json({
+            success:false,
+            message:result.message
+        });
+    }
+}
+export const getHashtags = async (req: Request, res: Response) => {
+    const result = await userService.getHashtag();
+    if(result && result.success==true){
+        return res.status(OK).json({
+            success:result.success,
+            message:result.message,
+            data:result.data
+        });
+    }
+    else{
+        return res.status(BAD_REQUEST).json({
+            success:false,
+            message:result.message
+        });
+    }
+}
+

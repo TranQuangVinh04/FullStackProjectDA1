@@ -6,6 +6,8 @@ import { UserDocument } from "../model/user.model";
 import { v2 as cloudinary } from "cloudinary";
 import { natificationService } from "./natification.service";
 import RepostBehaviorModel from "../model/repostHavior.model";
+import HashtagModel from "../model/hashtag.model";
+import { getReceiverSocketId, io } from "../config/socketIo";
 
 // Types
 export type CreatePostParams = {
@@ -79,21 +81,48 @@ export class PostService {
     }
 
     public async createPost(data: CreatePostParams) {
+        const hashtagRegex = /#(\w+)/g;
+        const hashtags = data.content.match(hashtagRegex) || [];
+  
         const newPost = new PostModel({
             user: data.userId,
             content: data.content,
             media: data.media,
         });
-
+        for (const tag of hashtags) {
+            const name = tag.substring(1);
+            const hashtag = await HashtagModel.findOne({ name });
+            if(!hashtag){
+                const newHashtag = new HashtagModel({ name, posts: [newPost._id], count: 1 });
+                newPost.hashtags.push(newHashtag._id);
+                await newHashtag.save();
+                await newPost.save();
+            }
+            if(hashtag){
+                hashtag.count++;
+                hashtag.posts.push(newPost._id);
+                newPost.hashtags.push(hashtag._id);
+                await hashtag.save();
+                await newPost.save();
+            }
+        }
         const user = await UserModel.findById(data.userId);
         if (user && user.followers.length > 0) {
             const notifications = user.followers.map((follower: any) => ({
                 from: data.userId,
                 to: follower,
                 type: 'CreatePost',
-                uniqueIdentifier: `${data.userId}_${follower}_CreatePost`
+                read:false,
+                uniqueIdentifier: `${data.userId}_${follower}_${newPost._id}_CreatePost`
             }));
             await natificationService.createManyNotification(notifications);
+            notifications.forEach((notification: any) => {
+                const receiverSocketId = getReceiverSocketId(notification.to.toString());
+                console.log(receiverSocketId);
+                if(receiverSocketId){
+                    io.to(receiverSocketId).emit("newNotification", notification);
+                }
+            });
         }
 
         await newPost.save();
@@ -123,6 +152,9 @@ export class PostService {
                 }
             }
         }
+        for(const hashtag of post.hashtags){
+            await HashtagModel.updateOne({ _id: hashtag }, { $pull: { posts: post._id } },{count:{$inc:-1}});
+        }
 
         await UserModel.updateMany(
             { likedPosts: post._id },
@@ -148,7 +180,7 @@ export class PostService {
                 from: data.userId,
                 to: data.post.user,
                 type: "comment",
-                uniqueIdentifier: `${data.userId}_${data.post.user}_comment`
+                uniqueIdentifier: `${data.userId}_${data.post.user}_${data.post._id}_comment`
             });
         }
 
@@ -171,7 +203,7 @@ export class PostService {
                     from: data.userId,
                     to: data.post.user,
                     type: "like",
-                    uniqueIdentifier: `${data.userId}_${data.post.user}_like`
+                    uniqueIdentifier: `${data.userId}_${data.post.user}_${data.post._id}_like`
                 });
                
             }
@@ -184,12 +216,17 @@ export class PostService {
             .sort({ createdAt: -1 })
             .populate({
                 path: "user",
-                select: "-password",    
+                select: "-password -email -createdAt -updatedAt -__v -followers -following -likedPosts -role -bio",    
             })
             .populate({
                 path: "comments.user",
-                select: "-password",
+                select: "-password -email -createdAt -updatedAt -__v -followers -following -likedPosts -role -bio",
+            })
+            .populate({
+                path: "likes",
+                select: "-password -email -createdAt -updatedAt -__v -followers -following -likedPosts -role -bio",
             });
+
     }
 
     public async getFollowers(data: GetFollowsParams) {
@@ -225,6 +262,10 @@ export class PostService {
         .populate({
             path: "comments.user",
             select: "fullname profileImg",
+        })
+        .populate({
+            path: "user",
+            select: "-password -email -createdAt -updatedAt -__v -followers -following -likedPosts -role -bio -email",
         });
         if (PostUser.length == 0) {
             return { success: false, data: [], message: "Người Dùng Không Có Bài Viết Nào" };
@@ -306,6 +347,26 @@ export class PostService {
             return {success:false,message:"Đã xảy ra lỗi khi repost bài viết"};
         }
         return {success:true,message:"Đã repost bài viết thành công"};
+    }
+    public async searchPost(query: string) {
+        const posts = await PostModel.find({
+           
+            content: { $regex: query, $options: 'i' },
+               
+            
+        })
+        .populate({
+            path: "user",
+            select: "-password",
+        })
+        .populate({
+            path: "comments.user",
+            select: "fullname profileImg",
+        });
+        if(!posts){
+            return {success:false,message:"Không tìm thấy bài viết"};
+        }
+        return {success:true,message:"Tìm kiếm bài viết thành công",posts:posts};
     }
 }
 

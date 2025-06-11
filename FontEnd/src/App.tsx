@@ -15,6 +15,9 @@ import Edit from "./components/Edit";
 import ChangePasswordForm from "./components/changePassword";
 import NotFoundPage from "./components/NotFoundPage";
 import Message from "./components/message";
+import CreatePostPage from "./components/CreatePostPage";
+import SearchPage from "./components/SearchPage";
+import Admin from "./components/Admin";
 function App() {
   const {autherChecking ,isLoading ,authUser ,isLogin,onlineUsers} = useAuthStore();
   useEffect(() => {
@@ -29,6 +32,7 @@ function App() {
       </div>
     )
   }
+ 
   return (
     <>
   <Routes>
@@ -82,6 +86,23 @@ function App() {
               <Message />
             </ProtectedRoute>
            } />
+          <Route path="/create-post" element={
+            <ProtectedRoute>
+              <CreatePostPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/search" element={
+            <ProtectedRoute>
+              <SearchPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin" element={authUser.role === "admin" ?(
+            <ProtectedRoute>
+              <Admin />
+            </ProtectedRoute>
+          ):(
+            <Navigate to="/" replace />
+          )} />
           <Route path="/404" element={<NotFoundPage />} />
 
         </Route>

@@ -3,6 +3,7 @@ import UserModel from "../model/user.model";
 import { UserDocument } from "../model/user.model";
 import bcrypt from "bcryptjs";
 import { natificationService } from "./natification.service";   
+import HashtagModel from "../model/hashtag.model";
 
 // Types
 type SetFollowOrUnfollowParams = {
@@ -48,7 +49,13 @@ class UserService {
         }
         return UserService.instance;
     }
-
+    // public async getProfile(username:string) {
+    //     const user = await UserModel.findOne({username:username})
+    //     .select("-password -role -createdAt -updatedAt -__v")
+    //     .populate("followers", "-password -email -role -createdAt -updatedAt -__v")
+    //     .populate("following", "-password -email -role -createdAt -updatedAt -__v");
+    //     return {success:true, message:"Lấy Thông Tin Người Dùng Thành Công", data:user};
+    // }
     public async setFollowOrUnfollow(data: SetFollowOrUnfollowParams) {
         if (data.isFollow) {
             await UserModel.findByIdAndUpdate(data.userCurrent._id, { $pull: { following: data.userMotify._id } });
@@ -102,6 +109,47 @@ class UserService {
         data.user.link = data.bio;
         await data.user.save();
         return { success: true, message: "Đã Cập Nhật Thông Tin Người Dùng" };
+    }
+    public async searchUsers(query: string) {
+        const users = await UserModel.find({
+            $or: [
+                { username: { $regex: query, $options: 'i' } },
+                { fullname: { $regex: query, $options: 'i' } }
+            ]
+        }).select("-password -role -createdAt -updatedAt -__v -email");
+        if (!users) {
+            return { success: false, message: "Không Tìm Thấy Người Dùng" };
+        }
+        return {success: true, message: "Tìm Kiếm Người Dùng Thành Công", users: users};
+    }
+    public async getSuggestionUser(userId:string) {
+        const currentUser = await UserModel.findById(userId);
+        if(!currentUser){
+            return {success:false, message:"Người Dùng Không Tồn Tại"};
+        }
+        const users = await UserModel.find({
+            $and: [
+                { _id: { $ne: currentUser._id } },
+                { status: "active" },
+                { _id: { $nin: currentUser.following } }
+            ]
+        }).select("_id username fullname profileImg").limit(5);
+        if(!users){
+            return {success:false, message:"Người Dùng Không Tồn Tại"};
+        }
+        return {success:true, message:"Lấy Danh Sách Người Dùng Thành Công", data:users};
+    }
+    public async getHashtag() {
+        
+        const topHashtags = await HashtagModel.find()
+                .sort({ count: -1 })
+                .limit(3)
+                .select("name count");
+        if(!topHashtags || topHashtags.length === 0){
+            return {success:true, message:"Không Tìm Thấy Hashtag",data:[]};
+        }
+        return { success: true, message:"Lấy Danh Sách Hashtag Thành Công", data: topHashtags };
+        
     }
 }
 

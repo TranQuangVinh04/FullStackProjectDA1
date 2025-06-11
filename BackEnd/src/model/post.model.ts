@@ -15,6 +15,7 @@ export interface PostDocument extends mongoose.Document {
         text: string;
         createdAt: Date;
     }[];
+    hashtags: mongoose.Types.ObjectId[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -62,6 +63,11 @@ const postSchema = new mongoose.Schema<PostDocument>({
             type: Date,
             default: Date.now
         }
+    }],
+    hashtags: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Hashtag',
+        default: []
     }]
 }, {
     timestamps: true,
@@ -82,6 +88,7 @@ postSchema.virtual('commentsCount').get(function() {
 //tối ưu hóa tìm kiếm
 postSchema.index({ user: 1, createdAt: -1 });
 postSchema.index({ content: 'text' });
+postSchema.index({ hashtags: 1 });
 
 //model
 const Post = mongoose.model<PostDocument>('Post', postSchema);

@@ -17,6 +17,7 @@ import {
     getFollwingsUser,
     getFollowingsPostUser,
     updatePostUser,
+    searchPost,
 } from "../controller/post.controller";
 
 import { validatePost ,validateComment} from "../middleware/validation";
@@ -42,5 +43,7 @@ routerPost.get("/getFollwingsUser",catchErrors(protectRoute),catchErrors(getFoll
 routerPost.get("/getFollowingsPostUser",catchErrors(protectRoute),catchErrors(getFollowingsPostUser));
 
 routerPost.put("/updatePostUser/:id",catchErrors(protectRoute),validatePost,catchErrors(updatePostUser));
+
+routerPost.get("/search",catchErrors(protectRoute),catchErrors(searchPost));
 
 export default routerPost;

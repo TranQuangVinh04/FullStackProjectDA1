@@ -6,10 +6,12 @@ import {
     changePasswordUser,
     uploadImageProfileUser,
     updateProfileUs,
-
+    searchUsers,
+    getSuggestionUser,
+    getHashtags,
  } from "../controller/user.controller";
 
- import { repostPost } from "../controller/post.controller";
+import { repostPost } from "../controller/post.controller";
 
 import { protectRoute } from "../middleware/protectroute";
 
@@ -30,5 +32,11 @@ routerUser.post("/repostPost/:id",catchErrors(protectRoute),catchErrors(repostPo
 routerUser.put("/uploadImageProfile",catchErrors(protectRoute),upload.single("image"),validateImageProfile,catchErrors(uploadImageProfileUser));
 
 routerUser.put("/updateProfile",catchErrors(protectRoute),upload.single("image"),catchErrors(updateProfileUs));
+
+routerUser.get("/search",catchErrors(protectRoute),catchErrors(searchUsers));
+
+routerUser.get("/suggestion",catchErrors(protectRoute),catchErrors(getSuggestionUser));
+
+routerUser.get("/hashtags",catchErrors(protectRoute),catchErrors(getHashtags));
 
 export default routerUser;

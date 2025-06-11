@@ -209,14 +209,14 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ isOpen, onClose }) 
           <div className="flex items-center gap-3">
             <div className="relative w-10 h-10 rounded-full overflow-hidden">
               <img
-                src={authUser?.avatar || "./imagebackround.png"}
+                src={authUser?.profileImg || "./imagebackround.png"}
                 alt="avatar"
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="flex flex-col">
-              <span className="font-semibold text-white">{authUser?.name}</span>
-              <span className="text-sm text-gray-400">Công khai</span>
+              <span className="font-semibold text-white">{authUser?.username}</span>
+              <span className="text-sm text-gray-400">{authUser?.fullname}</span>
             </div>
           </div>
 

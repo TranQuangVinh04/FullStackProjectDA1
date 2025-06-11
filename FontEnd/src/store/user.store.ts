@@ -3,7 +3,9 @@ import { axiosInstanace } from "../../config/axios";
 import { toast } from "react-hot-toast";
 import { useAuthStore } from "./authe.store";
 import { url } from "inspector";
+
 interface UserState {
+    notification: any,
     allPosts: any,
     profileUser: any,
     likesPost: any,
@@ -24,9 +26,18 @@ interface UserState {
     commentPost: (id: string, comment: string) => Promise<boolean>
     createPost: (post: any) => Promise<boolean>
     getPosts: () => Promise<any>
+    searchUsers: (query: string) => Promise<any[]>
+    searchPosts: (query: string) => Promise<any[]>
+    getSuggestedUsers: () => Promise<void>
+    suggestUsers:any
+    getHashtags: () => Promise<void>
+    hashtags:any
 }
 
 export const useUserStore = create<UserState>((set,get) => ({
+    hashtags:[],
+    suggestUsers:[],
+    notification: [],
     allPosts: [],
     profileUser: null,
     likesPost: [],
@@ -190,6 +201,43 @@ export const useUserStore = create<UserState>((set,get) => ({
             } catch (error:any) {
                 console.log("Không Lấy Được Các Bài Post");
                 return false;
+            }
+        },
+        searchUsers: async (query: string) => {
+            try {
+                const response = await axiosInstanace.get(`/user/search?q=${encodeURIComponent(query)}`);
+                return response.data.users;
+            } catch (error) {
+                console.error('có vấn đề tại search users:', error);
+                return [];
+            }
+        },
+        searchPosts: async (query: string) => {
+            try {
+                const response = await axiosInstanace.get(`/post/search?q=${encodeURIComponent(query)}`);
+                console.log(response.data.posts);
+                return response.data.posts;
+              
+            } catch (error) {
+                console.error('có vấn đề tại search post', error);
+                return [];
+            }
+        },
+        getSuggestedUsers: async () => {
+            try {
+                const response = await axiosInstanace.get("/user/suggestion");
+                set({suggestUsers: response.data.data});
+            } catch (error:any) {
+                console.log("Không Lấy Được Các Người Dùng Được Gợi Ý Theo Dõi");
+                
+            }
+        },
+        getHashtags: async () => {
+            try {
+                const response = await axiosInstanace.get(`/user/hashtags`);
+                set({hashtags: response.data.data});
+            } catch (error:any) {
+                console.log("Không Lấy Được Các Bài Post Có Hashtag");
             }
         }
 }))

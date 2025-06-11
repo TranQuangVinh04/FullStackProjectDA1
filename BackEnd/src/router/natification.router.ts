@@ -8,6 +8,6 @@ const routerNatification = Router();
 
 routerNatification.get("/getNatification",catchErrors(protectRoute),catchErrors(getNatification));
 
-routerNatification.patch("/readNatification/:id",catchErrors(protectRoute),catchErrors(readNatificationUser));
+routerNatification.put("/readNatification",catchErrors(protectRoute),catchErrors(readNatificationUser));
 
 export default routerNatification;

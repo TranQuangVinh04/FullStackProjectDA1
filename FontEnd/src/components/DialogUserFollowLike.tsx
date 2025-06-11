@@ -1,5 +1,6 @@
 import { Dialog } from "@headlessui/react";
 import React from "react";
+import { Link } from "react-router-dom";
 export const ModelDilogLikeFollow = ({ isOpen, onClose, users, title }: any) => (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
@@ -11,6 +12,8 @@ export const ModelDilogLikeFollow = ({ isOpen, onClose, users, title }: any) => 
           {users.length > 0 ? (
             <div className="p-4">
             {users.map((user: any) => (
+              console.log(user),
+              <Link to={`/${user.username}`} key={user.id} onClick={onClose}>
               <div key={user._id} className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-3">
                   <img
@@ -24,6 +27,7 @@ export const ModelDilogLikeFollow = ({ isOpen, onClose, users, title }: any) => 
                 </div>
                 
               </div>
+              </Link>
             ))}
           </div>
           ) : (

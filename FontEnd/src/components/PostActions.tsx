@@ -32,23 +32,19 @@ const PostActions: React.FC<PostActionsProps> = ({
 }) => {
 
   const [showModalComment, setShowModalComment] = useState(false);
-  const {likepost,getPostsUser} = useUserStore();
+  const {likepost,getPostsUser,getPosts} = useUserStore();
   const [likes, setLikes] = useState(initialLikes);
   const [comments, setComments] = useState(initialComments);
   const [liked, setLiked] = useState(likedUser);
+
   const handleLike = async () => {
     
     const resuft = await likepost(id);
     setLiked(resuft);
-    if(resuft){
-      setLikes(likes + 1);
-      setLiked(resuft);
-    }else{
-      setLikes(likes - 1);
-      setLiked(resuft);
-    }
+    
 
     await getPostsUser(name);
+    getPosts();
   };
   return (
     <div className="border-t border-gray-700 mt-3 pt-2 flex justify-around text-sm text-gray-300">
@@ -59,7 +55,7 @@ const PostActions: React.FC<PostActionsProps> = ({
         onClick={handleLike}
       >
         <ThumbsUp size={16} />
-        Thích {likes > 0 ? `` : ""}
+        Thích
       </button>
       <button
         className="flex items-center gap-1 hover:text-white cursor-pointer select-none"

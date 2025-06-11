@@ -9,6 +9,7 @@ import { natificationService } from "../services/natification.service";
 //controller
 export const getNatification = async (req:Request,res:Response)=>{
   const userId = req.userId;
+  
   const myNatification = await DatabaseNatification.find({to:userId})
         .sort({createdAt:-1})
         .populate({
@@ -24,7 +25,7 @@ export const getNatification = async (req:Request,res:Response)=>{
   return res.status(OK).json({
     success:true,
     message:"Lấy Danh Sách Thông Báo Thành Công",
-    myNatification:myNatification
+    notifications:myNatification
   });
     
 }
@@ -38,20 +39,12 @@ export const deleteNatification = async (req:Request,res:Response)=>{
 }
 export const readNatificationUser = async (req:Request<{id?:string},{},{}>,res:Response)=>{
     const userId = req.userId;
-    const {id} = req.params;
-    const idMongo = new mongoose.Types.ObjectId(id);
-    const natification = await natificationService.readNotification({id:idMongo});
+    const natification = await natificationService.readNotification({id:userId});
     if(natification && natification.success){
         return res.status(OK).json({
             success:natification.success,
             message:natification.message,
-            natification:natification.data
         });
     }
-    if(natification && natification.success == false){
-        return res.status(NOT_FOUND).json({
-            success:natification.success,
-            message:natification.message
-        });
-    }
+    
 }

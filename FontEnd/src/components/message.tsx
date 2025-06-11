@@ -186,7 +186,7 @@ const Message = () => {
                             )}
                 </div>
 
-                <div className='ml-3 relative'>
+                <div className='ml-3 '>
                     <h1 className='text-lg font-semibold text-white'>{authUser?.fullname}</h1>
                     
                 </div>

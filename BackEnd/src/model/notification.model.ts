@@ -24,7 +24,7 @@ const notificationSchema = new mongoose.Schema<NatificationDocument>({
     type:{
         type:String,
         required:true,
-        enum:["follow","like","CreatePost","comment"],
+        enum:["follow","like","CreatePost","comment","deleteByAdmin"],
 
     },
     read:{

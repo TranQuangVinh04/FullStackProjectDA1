@@ -15,6 +15,7 @@ export interface UserDocument extends mongoose.Document {
     likedPosts:any;
     createdAt:Date;
     updatedAt:Date;
+    status:string;
 
 }
 
@@ -80,6 +81,11 @@ const userSchema = new mongoose.Schema<UserDocument>({
             default: [],
         },
     ],
+    status:{
+        type:String,
+        enum:["active","banned"],
+        default:"active",
+    }
 },
 {timestamps:true}
 );

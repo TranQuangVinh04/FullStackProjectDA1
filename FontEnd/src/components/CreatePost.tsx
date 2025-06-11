@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/authe.store";
 import EditPost from "./EditPost";
 import ReportPost from "./ReportPost";  
+import { useAdminStore } from "../store/admin.store";
 interface PostCardProps {
     id: string;
     avatar: string;
@@ -45,8 +46,8 @@ const PostCard: React.FC<PostCardProps> = ({
   const [showMenu, setShowMenu] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const {deletePost, getPostsUser ,updatePost,reportPost} = useUserStore();
-
-
+  const {getPostsHavior,deletePostAdmin} = useAdminStore();
+  
   const handleDelete = async () => {
     const result = await deletePost(id);
     if(result){
@@ -54,7 +55,6 @@ const PostCard: React.FC<PostCardProps> = ({
     }
     
   };
-
   
   const handleEdit = async (updatedPost: { content: string; media?: { url: string; type: "image" | "video" }[] }) => {
     
@@ -65,6 +65,12 @@ const PostCard: React.FC<PostCardProps> = ({
       setShowEditModal(false);
     }
   };
+  const handleDeletePost = async (id: string) => {
+    const result = await deletePostAdmin(id);
+    if(result){
+      await getPostsHavior();
+    }
+  }
   const handleReport = async (reason: string, description: string, postId: string) => {
     const result = await reportPost({postId, reason, description});
     if(result){
@@ -72,7 +78,7 @@ const PostCard: React.FC<PostCardProps> = ({
     }
   }
   return (
-    <div className="bg-[#18191a] text-white rounded-md shadow-md max-w-[700px] mx-auto my-6 p-4">
+    <div className="bg-[#18191a] text-white rounded-md shadow-md max-w-[700px] mx-auto my-6 p-4 z-1">
       {/* Header */}
       <div key={id} className="flex items-center justify-between mb-3">
      
@@ -117,7 +123,7 @@ const PostCard: React.FC<PostCardProps> = ({
           
           {showMenu && (
             <div className="absolute right-0 mt-2 w-48 bg-[#242526] rounded-md shadow-lg py-1 z-10">
-              {username == authUser.username && (<>
+              {(username == authUser.username ) && (<>
                 <button
                   onClick={handleDelete}
                   className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-500 hover:bg-white/10 cursor-pointer"
@@ -132,7 +138,7 @@ const PostCard: React.FC<PostCardProps> = ({
                   <Edit size={16} />
                   Sửa bài viết
                 </button>
-                {showEditModal && (
+                {showEditModal &&  (
                       <>
                       <EditPost
                         isOpen={showEditModal}
@@ -147,7 +153,16 @@ const PostCard: React.FC<PostCardProps> = ({
                       </>
                     )}
               </>)}
-              {username !== authUser.username && (<><button
+              {authUser.role === "admin" && (<>
+                <button
+                  onClick={() => handleDeletePost(id)}
+                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-500 hover:bg-white/10 cursor-pointer"
+                >
+                  <Trash size={16} />
+                  Xóa bài viết Người Dùng
+                </button>
+              </>)}
+              {(username !== authUser.username) && (<><button
                 onClick={() => setShowReportModal(true)}
                 className="flex items-center gap-2 w-full px-4 py-2 text-sm text-white hover:bg-white/10 cursor-pointer"
               >

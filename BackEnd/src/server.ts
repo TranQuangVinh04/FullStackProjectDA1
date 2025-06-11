@@ -12,8 +12,11 @@ import routerPost from './router/post.router';
 import bodyParser from 'body-parser';
 import routerUser from './router/user.router';
 import routerMessage from './router/message.router';
+import routerNatification from './router/natification.router';
+import routerAdmin from './router/admin.router';
 // iosocket
 import { app ,server} from "./config/socketIo";
+
 app.use(
     cors(
         {
@@ -33,6 +36,8 @@ app.use("/api/auth",routerAuth);
 app.use("/api/post",routerPost);
 app.use("/api/user",routerUser);
 app.use("/api/message",routerMessage);
+app.use("/api/natification",routerNatification);
+app.use("/api/admin",routerAdmin);
 
 app.use(errorHandler);
 async function startServer (){
