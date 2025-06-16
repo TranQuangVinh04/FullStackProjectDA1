@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/authe.store';
 import { useNavigate } from 'react-router-dom';
 const ChangePasswordForm = () => {
     const {updatePassword} = useUserStore();
-    const {autherChecking} = useAuthStore();
+    const {autherChecking,authUser} = useAuthStore();
     const navigate = useNavigate();
     const [formData,setFormData] = useState({
         currentPassword:"",
@@ -45,7 +45,7 @@ const ChangePasswordForm = () => {
         confirmPassword:""
       });
       setError('');
-      navigate('/profile');
+      navigate(`/${authUser.username}`);
     }
   };
 

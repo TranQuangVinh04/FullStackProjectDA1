@@ -3,40 +3,39 @@ import { useAdminStore } from '../store/admin.store';
 import { useAuthStore } from '../store/authe.store';
 import ChangePasswordDialog from './ChangePasswordDialog';
 import ConfirmDialog from './ConfirmDialog';
-import { toast } from 'react-hot-toast';
 import CreatePost from './CreatePost';
+import { User as documentUserAdmin } from '../services/serviceAdmins';
+import ServicesAdmin from '../services/serviceAdmins';
 
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  role: string;
-  status: 'active' | 'banned';
-}
-
-interface Post {
-  id: string;
-  title: string;
-  author: string;
-  status: 'published' | 'draft' | 'deleted';
-  createdAt: string;
-}
-
-const ITEMS_PER_PAGE = 10;
 
 const Admin: React.FC = () => {
-    const {users,posts,getUsers,banOrUnbanUser,getPostsHavior,postsHavior,deleteReportHavior} = useAdminStore()
-    const {authUser} = useAuthStore()
+  //Handle Logic
+  const adminServices = ServicesAdmin.getInstance();
+
+  //Store Admin
+  const {
+    users,
+    getUsers,
+    banOrUnbanUser,
+    getPostsHavior,
+    postsHavior,
+    deleteReportHavior
+  } = useAdminStore()
+
+  //Store Auth
+  const {authUser} = useAuthStore()
+
+  //state
   const [activeTab, setActiveTab] = useState<'users' | 'postsHavior'>('users');
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<documentUserAdmin | null>(null);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [userToBan, setUserToBan] = useState<{ id: string; status: string } | null>(null);
   
 
-
+  //filter reload
   const filteredUsers = useMemo(() => {
     return users.filter(user => 
       user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -45,58 +44,22 @@ const Admin: React.FC = () => {
   }, [users, searchTerm]);
 
   // Pagination logic
+  const ITEMS_PER_PAGE = 5;
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const currentUsers = filteredUsers.slice(startIndex, endIndex);
-  
-  const handlePageChange = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
-  };
-  const handleBanOrUnbanUser = async (userId: string, status: string) => {
-    setUserToBan({ id: userId, status });
-    setIsConfirmOpen(true);
-  };
-  const handleDeleteReportHavior = async (postId: string) => {
-    const result = await deleteReportHavior(postId);
-    if(result){
-      toast.success("Xóa báo cáo thành công");
-      getPostsHavior();
-    }else{
-      toast.error("Xóa báo cáo thất bại");
-    }
-  }
-  const handleConfirmBan = async () => {
-    if (userToBan) {
-      const result = await banOrUnbanUser(userToBan.id);
-      if (result) {
-        toast.success(userToBan.status === 'active' ? 'Người Dùng Đã Bị Cấm' : 'Người Dùng Đã Được Mở Khóa');
-        getUsers();
-      } else {
-        toast.error('Thất bại');
-      }
-    }
-  };
 
-  const handleChangePassword = (userId: string, username: string) => {
-    setSelectedUser({ id: userId, username, email: '', role: '', status: 'active' });
-    setIsChangePasswordOpen(true);
-  };
-
- 
-
-  // Reset to first page when search term changes
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
-
+  //getUsẻ
   useEffect(() => {
     getUsers()
   }, [getUsers])
+
+  //getPostsHavior
   useEffect(() => {
     getPostsHavior()
   }, [getPostsHavior])
+
   return (
     <>
       <div className="min-h-screen bg-gray-100 p-6">
@@ -138,7 +101,7 @@ const Admin: React.FC = () => {
                       type="text"
                       placeholder="Search by username or email..."
                       value={searchTerm}
-                      onChange={handleSearchChange}
+                      onChange={(e) => adminServices.handleSearchChange(e,setCurrentPage,setSearchTerm)}
                       className="w-64 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     <svg
@@ -189,13 +152,13 @@ const Admin: React.FC = () => {
                             <td className="px-6 py-4 flex flex-col gap-2">
                               <button 
                                 className={`btn hover:text-red-800 ${user.status === 'active' ? 'bg-red-500' : 'bg-green-500'} text-white rounded-md cursor-pointer`}
-                                onClick={() => handleBanOrUnbanUser(user._id, user.status)}
+                                onClick={() => adminServices.handleBanOrUnbanUser({userId:user._id,status:user.status,setIsConfirmOpen,setUserToBan})}
                               >
                                 {user.status === 'active' ? 'Khóa Tài Khoản' : 'Mở Khóa Tài Khoản'}
                               </button>
                               <button 
                                 className="btn bg-blue-500 text-white rounded-md cursor-pointer"
-                                onClick={() => handleChangePassword(user._id, user.username)}
+                                onClick={() => adminServices.handleChangePassword({userId:user._id,username:user.username,setIsChangePasswordOpen,setSelectedUser})}
                               >
                                 Đổi Mật Khẩu
                               </button>
@@ -211,7 +174,7 @@ const Admin: React.FC = () => {
                 {filteredUsers.length > 0 && (
                   <div className="flex justify-center items-center space-x-2 mt-6">
                     <button
-                      onClick={() => handlePageChange(currentPage - 1)}
+                      onClick={() => adminServices.handlePageChange(currentPage - 1,setCurrentPage)}
                       disabled={currentPage === 1}
                       className={`px-3 py-1 rounded ${
                         currentPage === 1
@@ -224,7 +187,7 @@ const Admin: React.FC = () => {
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                       <button
                         key={page}
-                        onClick={() => handlePageChange(page)}
+                        onClick={() => adminServices.handlePageChange(page,setCurrentPage)}
                         className={`px-3 py-1 rounded cursor-pointer ${
                           currentPage === page
                             ? 'bg-blue-500 text-white'
@@ -235,7 +198,7 @@ const Admin: React.FC = () => {
                       </button>
                     ))}
                     <button
-                      onClick={() => handlePageChange(currentPage + 1)}
+                      onClick={() => adminServices.handlePageChange(currentPage + 1,setCurrentPage)}
                       disabled={currentPage === totalPages}
                       className={`px-3 py-1 rounded ${
                         currentPage === totalPages
@@ -250,12 +213,12 @@ const Admin: React.FC = () => {
               </div>
             ) : (
               <div>
-                <h2 className="flex text-xl font-semibold mb-4 text-black">Post RepostHavior</h2>
+                <h2 className="flex text-xl font-semibold mb-4 text-black">Các Post Bị Report</h2>
                  <div  className='flex gap-4 overflow-auto w-[100%] flex-wrap'>
                     {postsHavior.map((postHavior)=>(
                         
                             <div className=' bg-black rounded-lg p-4'>
-                                <button className='float-right btn bg-red-500 text-white rounded-md cursor-pointer' onClick={()=>{handleDeleteReportHavior(postHavior?._id)}}>Xóa</button>
+                                <button className='float-right btn bg-red-500 text-white rounded-md cursor-pointer' onClick={()=>{adminServices.handleDeleteReportHavior(postHavior?._id,deleteReportHavior)}}>Xóa</button>
                                 <h3 className='text-white'>{postHavior.text}</h3>
                                 <p className='text-white-500'>{postHavior.problem =="inappropriate" ? "Nội dung không phù hợp" :""}</p>
                                 <p className='text-white-500'>{postHavior.problem =="spam" ? "Spam" :""}</p>
@@ -284,18 +247,17 @@ const Admin: React.FC = () => {
                                         comments={postHavior.post?.comments.length}
                                         comment={postHavior.post?.comments}
                                     />
-                            </div>
-
+                              </div>
                             </div>
                     ))}
                 </div>
-
               </div>
             )}
           </div>
         </div>
       </div>
 
+      {/* Change Password Dialog */}
       {selectedUser && (
         <ChangePasswordDialog
           isOpen={isChangePasswordOpen}
@@ -306,13 +268,14 @@ const Admin: React.FC = () => {
         />
       )}
 
+      {/* Confirm Dialog */}
       <ConfirmDialog
         isOpen={isConfirmOpen}
         onClose={() => {
           setIsConfirmOpen(false);
           setUserToBan(null);
         }}
-        onConfirm={handleConfirmBan}
+        onConfirm={()=>{adminServices.handleConfirmBan(userToBan,banOrUnbanUser,getUsers)}}
         title={userToBan?.status === 'active' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
         message={
           userToBan?.status === 'active'

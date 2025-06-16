@@ -83,10 +83,13 @@ class AuthService {
         if (!isEmail) {
             return "Email Không Tồn Tại";
         }
-
+        
         const user = await UserModel.findOne({ email: data.email });
         if (!user) {
             return "Người Dùng Không Tồn Tại";
+        }
+        if(user.status==="banned"){
+            return "Tài Khoản Của Bạn Đã Bị Khóa";
         }
 
         const verifyPassword = await compareValue(data.password, user.password);

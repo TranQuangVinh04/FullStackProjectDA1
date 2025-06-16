@@ -48,6 +48,9 @@ export async function loginHandler(req:Request,res:Response,) {
     if(user=="Người Dùng Không Tồn Tại"){
             return res.status(NOT_FOUND).json({success:false,message:"Người Dùng Không Tồn Tại"});
         }
+    if(user=="Tài Khoản Của Bạn Đã Bị Khóa"){
+        return res.status(BAD_REQUEST).json({success:false,message:"Tài Khoản Của Bạn Đã Bị Khóa"});
+    }
     if(typeof user == "object" && user.success ==true){
          //set token jwt với remember me    
         authService.setTokenCookie(user.data._id, res, request.rememberMe)  
